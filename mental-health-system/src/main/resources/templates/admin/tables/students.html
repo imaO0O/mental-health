@@ -43,13 +43,17 @@
                     <div class="card-body">
                         <form th:action="@{/admin/tables/students/create}" method="post">
                             <div class="mb-3">
-                                <label for="userId" class="form-label">Пользователь *</label>
-                                <select class="form-select" id="userId" name="userId" required>
+                                <label for="login" class="form-label">Пользователь (логин) *</label>
+                                <select class="form-select" id="login" name="login" required>
                                     <option value="">Выберите пользователя</option>
-                                    <option th:each="u : ${users}" th:value="${u.id}" 
-                                            th:text="${u.login} + ' (' + ${u.role.name} + ')'">
+                                    <option th:each="u : ${users}" th:value="${u.login}"
+                                            th:text="${u.login} + ' (' + ${u.role.roleName} + ')'">
                                     </option>
                                 </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="recordBookNumber" class="form-label">Номер зачётной книжки *</label>
+                                <input type="number" class="form-control" id="recordBookNumber" name="recordBookNumber" required>
                             </div>
                             <div class="mb-3">
                                 <label for="lastName" class="form-label">Фамилия *</label>

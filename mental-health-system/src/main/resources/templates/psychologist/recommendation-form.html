@@ -32,12 +32,12 @@
                     <div class="card-body">
                         <form th:action="@{/psychologist/recommendation/create}" method="post">
                             <div class="mb-3">
-                                <label for="levelId" class="form-label">Уровень стресса *</label>
-                                <select class="form-select" id="levelId" name="levelId" required>
+                                <label for="levelName" class="form-label">Уровень стресса *</label>
+                                <select class="form-select" id="levelName" name="levelName" required>
                                     <option value="">Выберите уровень стресса</option>
                                     <option th:each="level : ${levels}"
-                                            th:value="${level.id}"
-                                            th:text="${level.name + ' (' + level.minScore + '-' + level.maxScore + ' баллов)'}">
+                                            th:value="${level.levelName}"
+                                            th:text="${level.levelName + ' (' + level.minPercent + '–' + level.maxPercent + '%)'}">
                                         Уровень
                                     </option>
                                 </select>

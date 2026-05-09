@@ -48,12 +48,12 @@
                 <form method="get" th:action="@{/student/results}" class="row g-2 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">Уровень стресса</label>
-                        <select name="levelId" class="form-select">
+                        <select name="levelName" class="form-select">
                             <option value="">— Любой —</option>
                             <option th:each="lv : ${levels}"
-                                    th:value="${lv.id}"
-                                    th:text="${lv.name}"
-                                    th:selected="${filterLevelId != null and filterLevelId == lv.id}"></option>
+                                    th:value="${lv.levelName}"
+                                    th:text="${lv.levelName}"
+                                    th:selected="${filterLevel != null and filterLevel == lv.levelName}"></option>
                         </select>
                     </div>
                     <div class="col-md-3">

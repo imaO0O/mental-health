@@ -49,7 +49,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong><span th:text="${qStat.count}"></span>. <span th:text="${q.questionText}"></span></strong>
             <form th:action="@{/psychologist/question/{qid}/delete(qid=${q.id})}" method="post" class="m-0">
-                <input type="hidden" name="testId" th:value="${test.id}">
+                <input type="hidden" name="testCode" th:value="${test.testCode}">
                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить вопрос?')">Удалить</button>
             </form>
         </div>
@@ -63,14 +63,14 @@
                         <span class="badge bg-secondary ms-2">баллов: <span th:text="${a.score}"></span></span>
                     </span>
                     <form th:action="@{/psychologist/answer/{aid}/delete(aid=${a.id})}" method="post" class="m-0">
-                        <input type="hidden" name="testId" th:value="${test.id}">
+                        <input type="hidden" name="testCode" th:value="${test.testCode}">
                         <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
                     </form>
                 </li>
             </ul>
 
             <form th:action="@{/psychologist/question/{qid}/answer/add(qid=${q.id})}" method="post" class="row g-2">
-                <input type="hidden" name="testId" th:value="${test.id}">
+                <input type="hidden" name="testCode" th:value="${test.testCode}">
                 <div class="col-md-8">
                     <input type="text" class="form-control" name="answerText" placeholder="Текст ответа" required>
                 </div>

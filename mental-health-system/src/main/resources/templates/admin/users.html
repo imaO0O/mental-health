@@ -43,12 +43,12 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small text-muted mb-1">Роль</label>
-                        <select name="roleId" class="form-select">
+                        <select name="roleName" class="form-select">
                             <option value="">— Все роли —</option>
                             <option th:each="r : ${allRoles}"
-                                    th:value="${r.id}"
-                                    th:text="${r.name}"
-                                    th:selected="${filterRoleId != null and filterRoleId == r.id}"></option>
+                                    th:value="${r.roleName}"
+                                    th:text="${r.roleName}"
+                                    th:selected="${filterRoleId != null and filterRoleId == r.roleName}"></option>
                         </select>
                     </div>
                     <div class="col-md-3 d-flex gap-2">
@@ -79,27 +79,27 @@
                                         <td th:text="${iterStat.count}">1</td>
                                         <td th:text="${u.login}">login</td>
                                         <td>
-                                            <form th:action="@{/admin/user/{id}/role(id=${u.id})}" method="post" class="d-flex gap-1">
-                                                <select name="roleId" class="form-select form-select-sm">
+                                            <form th:action="@{/admin/user/{login}/role(login=${u.login})}" method="post" class="d-flex gap-1">
+                                                <select name="roleName" class="form-select form-select-sm">
                                                     <option th:each="r : ${allRoles}"
-                                                            th:value="${r.id}"
-                                                            th:text="${r.name}"
-                                                            th:selected="${u.role != null and u.role.id == r.id}"></option>
+                                                            th:value="${r.roleName}"
+                                                            th:text="${r.roleName}"
+                                                            th:selected="${u.role != null and u.role.roleName == r.roleName}"></option>
                                                 </select>
                                                 <button class="btn btn-sm btn-outline-primary" type="submit">OK</button>
                                             </form>
                                         </td>
                                         <td th:text="${u.createdAt != null ? #temporals.format(u.createdAt, 'dd.MM.yyyy') : '-'}">01.01.2026</td>
                                         <td>
-                                            <form th:action="@{/admin/user/{id}/password(id=${u.id})}" method="post" class="d-inline-flex gap-1">
+                                            <form th:action="@{/admin/user/{login}/password(login=${u.login})}" method="post" class="d-inline-flex gap-1">
                                                 <input type="text" name="password" class="form-control form-control-sm" style="width:120px" placeholder="новый пароль" required>
                                                 <button class="btn btn-sm btn-outline-warning" type="submit">Сброс</button>
                                             </form>
-                                            <a th:if="${u.id != currentUserId}"
-                                               th:href="@{/admin/user/{id}/delete(id=${u.id})}"
+                                            <a th:if="${u.login != currentUserId}"
+                                               th:href="@{/admin/user/{login}/delete(login=${u.login})}"
                                                class="btn btn-sm btn-outline-danger ms-1"
                                                onclick="return confirm('Удалить пользователя?')">Удалить</a>
-                                            <span class="text-muted small" th:if="${u.id == currentUserId}">— это вы —</span>
+                                            <span class="text-muted small" th:if="${u.login == currentUserId}">— это вы —</span>
                                         </td>
                                     </tr>
                                 </tbody>
