@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #2c3e50 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #2c3e50; border-color: #2c3e50; }
+        .stat-card { 
+            border-left: 4px solid #2c3e50;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        @media print {
+            .navbar, .no-print, .btn { display: none !important; }
+            body { background: #fff; }
+            .card { box-shadow: none; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/admin/dashboard}">Панель управления</a>
+                <a class="nav-link" th:href="@{/admin/users}">Пользователи</a>
+                <a class="nav-link" th:href="@{/admin/tests}">Тесты</a>
+                <a class="nav-link" th:href="@{/admin/tables}">Таблицы</a>
+                <a class="nav-link" th:href="@{/admin/statistics}">Статистика</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>📈 Статистика системы</h1>
+                    <p class="text-muted">Отчёт сформирован: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}"></span></p>
+                </div>
+                <button class="btn btn-outline-primary no-print" onclick="window.print()">🖨 Распечатать отчёт</button>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Всего пользователей</h6>
+                        <h2 class="display-4" th:text="${totalUsers}">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Всего тестов</h6>
+                        <h2 class="display-4" th:text="${totalTests}">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Пройдено тестирований</h6>
+                        <h2 class="display-4" th:text="${totalResults}">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Пользователи по ролям</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                👨‍🎓 Студенты
+                                <span class="badge bg-success" th:text="${studentsCount}">0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                🧑‍⚕️ Психологи
+                                <span class="badge bg-primary" th:text="${psychologistsCount}">0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ⚙️ Администраторы
+                                <span class="badge bg-danger" th:text="${adminsCount}">0</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Информация о системе</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Версия Java</td>
+                                <td>22</td>
+                            </tr>
+                            <tr>
+                                <td>Spring Boot</td>
+                                <td>3.2.0</td>
+                            </tr>
+                            <tr>
+                                <td>База данных</td>
+                                <td>PostgreSQL</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

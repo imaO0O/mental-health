@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная - Студент</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #4a90a4 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .btn-primary { background-color: #4a90a4; border-color: #4a90a4; }
+        .test-icon { font-size: 2rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
+                <a class="nav-link" th:href="@{/student/results}">Мои результаты</a>
+                <a class="nav-link" th:href="@{/student/recommendations}">Рекомендации</a>
+                <a class="nav-link" th:href="@{/student/profile}">Профиль</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-6">
+                    Добро пожаловать,
+                    <span th:text="${student != null and student.firstName != null and !#strings.isEmpty(student.firstName) ? student.firstName : user.login}">Студент</span>!
+                </h1>
+                <p class="text-muted mb-0">
+                    Пройдите тесты для оценки вашего психоэмоционального состояния
+                </p>
+                <p class="text-muted small mt-1" th:if="${student != null and student.groupName != null}">
+                    Группа: <span class="badge bg-secondary" th:text="${student.groupName}">ИВТ-41</span>
+                    <span th:if="${student.fullName != null and !#strings.isEmpty(student.fullName)}">
+                        · <span th:text="${student.fullName}">ФИО</span>
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-3">📋 Доступные тесты</h3>
+            </div>
+        </div>
+
+        <div class="row" th:if="${tests}">
+            <div class="col-md-6 col-lg-4 mb-4" th:each="test : ${tests}">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="test-icon">📝</div>
+                        <h5 class="card-title" th:text="${test.name}">Название теста</h5>
+                        <p class="card-text text-muted" th:text="${test.description}">Описание</p>
+                        <a th:href="@{/student/test/{id}(id=${test.id})}" class="btn btn-primary">Пройти тест</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" th:if="${#lists.isEmpty(tests)}">
+            <div class="col-12">
+                <div class="alert alert-info">В данный момент нет доступных тестов.</div>
+            </div>
+        </div>
+
+        <div class="row mt-4" th:if="${results}">
+            <div class="col-12">
+                <h3 class="mb-3">📊 Последние результаты</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Тест</th>
+                                        <th>Баллы</th>
+                                        <th>Дата</th>
+                                        <th>Уровень стресса</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="result : ${results}" th:if="${#lists.size(results) > 0}">
+                                        <td th:text="${result.test.name}">Тест</td>
+                                        <td th:text="${result.totalScore}">0</td>
+                                        <td th:text="${result.dateTaken != null ? result.dateTaken : '-'}">01.01.2026</td>
+                                        <td th:text="${result.stressLevel != null ? result.stressLevel.name : '-'}">Результат</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <a th:href="@{/student/results}" class="btn btn-outline-primary">Все результаты</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление тестами</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #5a4ba2 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
+                <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
+                <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
+                <a class="nav-link" th:href="@{/psychologist/recommendation/create}">Рекомендация</a>
+                <a class="nav-link" th:href="@{/psychologist/statistics}">Статистика</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1>📋 Управление тестами</h1>
+                    <a th:href="@{/psychologist/test/create}" class="btn btn-primary">Создать тест</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" th:action="@{/psychologist/tests}" class="row g-2 align-items-end">
+                    <div class="col-md-9">
+                        <label class="form-label small text-muted mb-1">Поиск по названию теста</label>
+                        <input type="text" name="q" class="form-control" th:value="${q}" placeholder="название теста...">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">🔍 Найти</button>
+                        <a th:href="@{/psychologist/tests}" class="btn btn-outline-secondary">Сброс</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive" th:if="${tests}">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>№</th>
+                                        <th>Название</th>
+                                        <th>Описание</th>
+                                        <th>Статус</th>
+                                        <th>Вопросов</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="test, iterStat : ${tests}">
+                                        <td th:text="${iterStat.count}">1</td>
+                                        <td th:text="${test.name}">Название</td>
+                                        <td th:text="${#strings.abbreviate(test.description, 50)}">Описание</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${test.isActive} ? 'bg-success' : 'bg-secondary'"
+                                                  th:text="${test.isActive} ? 'Активен' : 'Неактивен'">
+                                                Статус
+                                            </span>
+                                        </td>
+                                        <td th:text="${questionCounts != null ? questionCounts.get(test.id) : 0}">0</td>
+                                        <td>
+                                            <a th:href="@{/psychologist/test/{id}/edit(id=${test.id})}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                                            <a th:href="@{/psychologist/test/{id}/questions(id=${test.id})}" class="btn btn-sm btn-outline-secondary">Вопросы</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info" th:if="${#lists.isEmpty(tests)}">
+                            Тесты ещё не созданы.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

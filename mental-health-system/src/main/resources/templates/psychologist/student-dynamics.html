@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Динамика студента</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #5a4ba2 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+        .stat-card { border-left: 4px solid #5a4ba2; }
+        @media print {
+            .navbar, .no-print, .btn { display: none !important; }
+            body { background: #fff; }
+            .card { box-shadow: none; border: 1px solid #ccc; }
+        }
+        .bar { height: 24px; background: linear-gradient(90deg,#5a4ba2,#9d8fdc); color: #fff; padding: 0 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
+            <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
+            <a class="nav-link" th:href="@{/logout}">Выйти</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <a th:href="@{/psychologist/student/{id}/results(id=${student.id})}" class="btn btn-outline-secondary">← К результатам</a>
+        <button class="btn btn-outline-primary" onclick="window.print()">🖨 Распечатать</button>
+    </div>
+
+    <h1>📈 Динамика психоэмоционального состояния</h1>
+    <h4 class="text-muted">
+        <span th:text="${student.fullName}"></span>,
+        группа <span th:text="${student.groupName}"></span>
+    </h4>
+    <p class="text-muted">Отчёт сформирован: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}"></span></p>
+
+    <div class="row mb-4">
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <h6 class="text-muted">Тестирований</h6><h3 th:text="${#lists.size(results)}">0</h3>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <h6 class="text-muted">Средний балл</h6><h3 th:text="${avgScore}">0</h3>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <h6 class="text-muted">Минимум</h6><h3 th:text="${minScore}">0</h3>
+        </div></div></div>
+        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
+            <h6 class="text-muted">Максимум</h6><h3 th:text="${maxScore}">0</h3>
+        </div></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h5 class="mb-0">Хронология результатов</h5></div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(results)}" class="alert alert-info">У студента ещё нет пройденных тестов.</div>
+            <table class="table" th:if="${not #lists.isEmpty(results)}">
+                <thead>
+                <tr><th>Дата</th><th>Тест</th><th>Балл</th><th>Уровень</th><th style="width: 30%">График</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${results}">
+                    <td th:text="${#temporals.format(r.dateTaken, 'dd.MM.yyyy')}"></td>
+                    <td th:text="${r.test.name}"></td>
+                    <td th:text="${r.totalScore}"></td>
+                    <td th:text="${r.stressLevel != null ? r.stressLevel.name : '—'}"></td>
+                    <td>
+                        <div class="bar"
+                             th:style="'width:' + (${maxScore} > 0 ? ${r.totalScore} * 100 / ${maxScore} : 0) + '%'"
+                             th:text="${r.totalScore}"></div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

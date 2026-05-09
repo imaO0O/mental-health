@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        :root {
+            --brand-1: #667eea;
+            --brand-2: #764ba2;
+        }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+        }
+        .auth-wrapper {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1.15fr;
+        }
+        .auth-hero {
+            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            color: #fff;
+            padding: 60px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.18), transparent 40%),
+                        radial-gradient(circle at 80% 70%, rgba(255,255,255,.12), transparent 45%);
+            pointer-events: none;
+        }
+        .auth-hero .brand { font-size: 1.4rem; font-weight: 600; }
+        .auth-hero h1 { font-size: 2.4rem; font-weight: 700; line-height: 1.15; margin-bottom: 18px; }
+        .auth-hero p.lead { font-size: 1.05rem; opacity: .92; max-width: 460px; }
+        .auth-hero .step {
+            display: flex; align-items: flex-start; gap: 14px; margin-top: 16px; opacity: .95;
+        }
+        .auth-hero .step .num {
+            width: 32px; height: 32px; flex-shrink: 0;
+            border-radius: 50%; background: rgba(255,255,255,.2);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700;
+        }
+        .auth-hero footer { font-size: .85rem; opacity: .8; }
+
+        .auth-form-side {
+            display: flex; align-items: center; justify-content: center;
+            padding: 40px 24px;
+        }
+        .auth-card {
+            width: 100%; max-width: 560px;
+            background: #fff; border-radius: 18px;
+            padding: 40px 40px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, .12);
+        }
+        .auth-card h2 { font-weight: 700; margin-bottom: 4px; }
+        .auth-card .subtitle { color: #6b7280; margin-bottom: 24px; }
+        .form-label { font-size: .82rem; color: #6b7280; margin-bottom: 4px; }
+        .form-control, .form-select {
+            border-radius: 10px; padding: .6rem .85rem; border: 1px solid #e5e7eb;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--brand-1);
+            box-shadow: 0 0 0 .2rem rgba(102, 126, 234, .15);
+        }
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            border: none; color: #fff; border-radius: 10px;
+            padding: .7rem 1rem; font-weight: 600;
+            transition: transform .08s ease, box-shadow .15s ease;
+        }
+        .btn-brand:hover {
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(102, 126, 234, .35);
+            transform: translateY(-1px);
+        }
+        a { color: var(--brand-2); text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+
+        /* Role chooser */
+        .role-toggle {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 20px;
+        }
+        .role-toggle label {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 14px 10px; border: 2px solid #e5e7eb; border-radius: 12px;
+            cursor: pointer; transition: all .15s ease;
+            background: #fafbff;
+        }
+        .role-toggle label .ico { font-size: 1.6rem; }
+        .role-toggle label .title { font-weight: 600; color: #374151; }
+        .role-toggle label .desc { font-size: .75rem; color: #6b7280; text-align: center; }
+        .role-toggle input[type="radio"] { display: none; }
+        .role-toggle input[type="radio"]:checked + label {
+            border-color: var(--brand-1);
+            background: linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08));
+            box-shadow: 0 4px 12px rgba(102,126,234,.15);
+        }
+        .role-block {
+            background: #fafbff; border: 1px solid #eef0fb; border-radius: 12px;
+            padding: 16px; margin-bottom: 16px;
+        }
+        .role-block .role-block-title {
+            font-weight: 600; color: #4b3f8f; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        @media (max-width: 960px) {
+            .auth-wrapper { grid-template-columns: 1fr; }
+            .auth-hero { padding: 40px 28px; }
+            .auth-hero h1 { font-size: 1.8rem; }
+            .auth-card { padding: 28px 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <aside class="auth-hero">
+            <div class="brand">🧠 Психотестирование</div>
+            <div>
+                <h1>Создайте аккаунт за минуту</h1>
+                <p class="lead">Присоединяйтесь к платформе для мониторинга ментального здоровья.</p>
+                <div class="step"><div class="num">1</div><div><strong>Выберите роль</strong><br><span style="opacity:.85">Студент или психолог</span></div></div>
+                <div class="step"><div class="num">2</div><div><strong>Заполните профиль</strong><br><span style="opacity:.85">Основные данные для работы в системе</span></div></div>
+                <div class="step"><div class="num">3</div><div><strong>Начните работу</strong><br><span style="opacity:.85">Проходите тесты или анализируйте результаты</span></div></div>
+            </div>
+            <footer>© 2026 Mental Health System</footer>
+        </aside>
+
+        <main class="auth-form-side">
+            <div class="auth-card">
+                <h2>Регистрация</h2>
+                <p class="subtitle">Заполните форму, чтобы создать учётную запись</p>
+
+                <div th:if="${error}" class="alert alert-danger py-2" th:text="${error}"></div>
+
+                <form th:action="@{/register}" method="post" th:object="${registerRequest}">
+                    <!-- Role selector -->
+                    <label class="form-label">Роль в системе</label>
+                    <div class="role-toggle">
+                        <input type="radio" id="roleStudent" name="role" value="STUDENT"
+                               th:checked="*{role == null or role == 'STUDENT'}"
+                               onchange="toggleRoleFields()">
+                        <label for="roleStudent">
+                            <span class="ico">🎓</span>
+                            <span class="title">Студент</span>
+                            <span class="desc">Прохождение тестов</span>
+                        </label>
+                        <input type="radio" id="rolePsy" name="role" value="PSYCHOLOGIST"
+                               th:checked="*{role == 'PSYCHOLOGIST'}"
+                               onchange="toggleRoleFields()">
+                        <label for="rolePsy">
+                            <span class="ico">👩‍⚕️</span>
+                            <span class="title">Психолог</span>
+                            <span class="desc">Анализ результатов</span>
+                        </label>
+                    </div>
+
+                    <!-- Account credentials -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="login" class="form-label">Логин *</label>
+                            <input type="text" class="form-control" id="login" name="login"
+                                   th:value="*{login}" required autofocus>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Пароль *</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+
+                    <!-- Common: ФИО -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Фамилия *</label>
+                            <input type="text" class="form-control" name="lastName" th:value="*{lastName}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Имя *</label>
+                            <input type="text" class="form-control" name="firstName" th:value="*{firstName}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Отчество</label>
+                            <input type="text" class="form-control" name="middleName" th:value="*{middleName}">
+                        </div>
+                    </div>
+
+                    <!-- Student-specific block -->
+                    <div class="role-block" id="studentBlock">
+                        <div class="role-block-title">🎓 Данные студента</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Группа *</label>
+                                <input type="text" class="form-control" id="groupNameInput"
+                                       name="groupName" th:value="*{groupName}"
+                                       placeholder="например, ИВТ-41">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Номер зачётной книжки</label>
+                                <input type="number" class="form-control" id="recordBookInput"
+                                       name="recordBookNumber" th:value="*{recordBookNumber}"
+                                       placeholder="например, 202400000123">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" th:value="*{email}">
+                            </div>
+                            <div class="col-12 mb-1">
+                                <label class="form-label">Телефон</label>
+                                <input type="text" class="form-control" name="phone" th:value="*{phone}"
+                                       placeholder="+7 (___) ___-__-__">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Psychologist-specific block -->
+                    <div class="role-block d-none" id="psyBlock">
+                        <div class="role-block-title">👩‍⚕️ Данные психолога</div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Должность *</label>
+                                <input type="text" class="form-control" id="positionInput"
+                                       name="position" th:value="*{position}"
+                                       placeholder="например, Клинический психолог">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Табельный номер</label>
+                                <input type="number" class="form-control" id="personnelNumberInput"
+                                       name="personnelNumber" th:value="*{personnelNumber}"
+                                       placeholder="например, 100042">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="psyEmailInput"
+                                       name="emailPsy" th:value="*{email}">
+                            </div>
+                            <div class="col-12 mb-1">
+                                <label class="form-label">Телефон</label>
+                                <input type="text" class="form-control" id="psyPhoneInput"
+                                       name="phonePsy" th:value="*{phone}"
+                                       placeholder="+7 (___) ___-__-__">
+                            </div>
+                        </div>
+                        <div class="alert alert-warning py-2 small mb-0">
+                            ⚠️ Регистрация психолога может требовать подтверждения администратора.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100 mt-2 mb-3">Создать аккаунт</button>
+                </form>
+
+                <div class="text-center">
+                    Уже есть аккаунт? <a th:href="@{/login}">Войти</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script>
+        function getSelectedRole() {
+            var r = document.querySelector('input[name="role"]:checked');
+            return r ? r.value : 'STUDENT';
+        }
+        function toggleRoleFields() {
+            var role = getSelectedRole();
+            var isStudent = role === 'STUDENT';
+            var studentBlock = document.getElementById('studentBlock');
+            var psyBlock = document.getElementById('psyBlock');
+            studentBlock.classList.toggle('d-none', !isStudent);
+            psyBlock.classList.toggle('d-none', isStudent);
+
+            // Disable hidden inputs so the wrong role's data doesn't get submitted
+            studentBlock.querySelectorAll('input').forEach(function(i){ i.disabled = !isStudent; });
+            psyBlock.querySelectorAll('input').forEach(function(i){ i.disabled = isStudent; });
+
+            // Required flags
+            document.getElementById('groupNameInput').required = isStudent;
+            document.getElementById('positionInput').required = !isStudent;
+
+            // Map psychologist email/phone fields to the canonical names on submit
+            document.getElementById('psyEmailInput').name = isStudent ? 'emailPsy' : 'email';
+            document.getElementById('psyPhoneInput').name = isStudent ? 'phonePsy' : 'phone';
+        }
+        toggleRoleFields();
+    </script>
+</body>
+</html>

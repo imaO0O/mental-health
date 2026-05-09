@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вопросы теста</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #5a4ba2 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
+            <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
+            <a class="nav-link" th:href="@{/logout}">Выйти</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <a th:href="@{/psychologist/tests}" class="btn btn-outline-secondary mb-3">← К списку тестов</a>
+    <h1>📝 Вопросы теста: <span th:text="${test.name}"></span></h1>
+    <p class="text-muted" th:text="${test.description}"></p>
+
+    <div class="card mt-3">
+        <div class="card-header"><strong>➕ Добавить вопрос</strong></div>
+        <div class="card-body">
+            <form th:action="@{/psychologist/test/{id}/question/add(id=${test.id})}" method="post" class="row g-2">
+                <div class="col-md-10">
+                    <input type="text" class="form-control" name="questionText" placeholder="Текст вопроса" required>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-4" th:if="${#lists.isEmpty(questions)}">У теста пока нет вопросов.</div>
+
+    <div class="card mt-3" th:each="q, qStat : ${questions}">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong><span th:text="${qStat.count}"></span>. <span th:text="${q.questionText}"></span></strong>
+            <form th:action="@{/psychologist/question/{qid}/delete(qid=${q.id})}" method="post" class="m-0">
+                <input type="hidden" name="testId" th:value="${test.id}">
+                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить вопрос?')">Удалить</button>
+            </form>
+        </div>
+        <div class="card-body">
+            <h6>Варианты ответов</h6>
+            <ul class="list-group mb-3" th:if="${not #lists.isEmpty(answersMap.get(q.id))}">
+                <li class="list-group-item d-flex justify-content-between align-items-center"
+                    th:each="a : ${answersMap.get(q.id)}">
+                    <span>
+                        <span th:text="${a.answerText}"></span>
+                        <span class="badge bg-secondary ms-2">баллов: <span th:text="${a.score}"></span></span>
+                    </span>
+                    <form th:action="@{/psychologist/answer/{aid}/delete(aid=${a.id})}" method="post" class="m-0">
+                        <input type="hidden" name="testId" th:value="${test.id}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
+                    </form>
+                </li>
+            </ul>
+
+            <form th:action="@{/psychologist/question/{qid}/answer/add(qid=${q.id})}" method="post" class="row g-2">
+                <input type="hidden" name="testId" th:value="${test.id}">
+                <div class="col-md-8">
+                    <input type="text" class="form-control" name="answerText" placeholder="Текст ответа" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="score" placeholder="Балл" min="0" required>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary w-100" type="submit">+ Ответ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

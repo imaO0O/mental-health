@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        :root {
+            --brand-1: #667eea;
+            --brand-2: #764ba2;
+        }
+        html, body { height: 100%; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fb;
+        }
+        .auth-wrapper {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+        }
+        .auth-hero {
+            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            color: #fff;
+            padding: 60px 56px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.18), transparent 40%),
+                        radial-gradient(circle at 80% 70%, rgba(255,255,255,.12), transparent 45%);
+            pointer-events: none;
+        }
+        .auth-hero .brand {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+        .auth-hero h1 {
+            font-size: 2.6rem;
+            line-height: 1.15;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+        .auth-hero p.lead {
+            font-size: 1.1rem;
+            opacity: .92;
+            max-width: 480px;
+        }
+        .auth-hero .feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-top: 18px;
+            opacity: .95;
+        }
+        .auth-hero .feature .ico {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .auth-hero footer {
+            font-size: .85rem;
+            opacity: .8;
+        }
+        .auth-form-side {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: #fff;
+            border-radius: 18px;
+            padding: 44px 40px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, .12);
+        }
+        .auth-card h2 {
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .auth-card .subtitle {
+            color: #6b7280;
+            margin-bottom: 28px;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: .65rem .9rem;
+            border: 1px solid #e5e7eb;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--brand-1);
+            box-shadow: 0 0 0 .2rem rgba(102, 126, 234, .15);
+        }
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            border: none;
+            color: #fff;
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-weight: 600;
+            transition: transform .08s ease, box-shadow .15s ease;
+        }
+        .btn-brand:hover {
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(102, 126, 234, .35);
+            transform: translateY(-1px);
+        }
+        .demo-creds {
+            background: #f5f7fb;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: .85rem;
+            color: #4b5563;
+        }
+        .demo-creds code {
+            color: #4b3f8f;
+            background: rgba(102, 126, 234, .1);
+            padding: 1px 6px;
+            border-radius: 5px;
+        }
+        a { color: var(--brand-2); text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        @media (max-width: 900px) {
+            .auth-wrapper { grid-template-columns: 1fr; }
+            .auth-hero { padding: 40px 28px; min-height: auto; }
+            .auth-hero h1 { font-size: 2rem; }
+            .auth-card { padding: 32px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <aside class="auth-hero">
+            <div class="brand">🧠 Психотестирование</div>
+            <div>
+                <h1>Забота о ментальном здоровье студентов</h1>
+                <p class="lead">Платформа для прохождения психологических тестов, отслеживания динамики и получения индивидуальных рекомендаций.</p>
+                <div class="feature">
+                    <div class="ico">📋</div>
+                    <div><strong>Психологические тесты</strong><br><span style="opacity:.85">Профессиональные методики оценки состояния</span></div>
+                </div>
+                <div class="feature">
+                    <div class="ico">📈</div>
+                    <div><strong>Динамика состояния</strong><br><span style="opacity:.85">Отслеживайте изменения во времени</span></div>
+                </div>
+                <div class="feature">
+                    <div class="ico">💡</div>
+                    <div><strong>Персональные рекомендации</strong><br><span style="opacity:.85">Подсказки от психолога по уровню стресса</span></div>
+                </div>
+            </div>
+            <footer>© 2026 Mental Health System</footer>
+        </aside>
+
+        <main class="auth-form-side">
+            <div class="auth-card">
+                <h2>С возвращением 👋</h2>
+                <p class="subtitle">Войдите, чтобы продолжить работу с системой</p>
+
+                <div th:if="${param.registered}" class="alert alert-success py-2">
+                    Регистрация успешна! Теперь вы можете войти.
+                </div>
+                <div th:if="${param.error}" class="alert alert-danger py-2">
+                    Неверное имя пользователя или пароль.
+                </div>
+                <div th:if="${param.logout}" class="alert alert-info py-2">
+                    Вы успешно вышли из системы.
+                </div>
+
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label small text-muted">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus placeholder="например, student">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label small text-muted">Пароль</label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-brand w-100 mb-3">Войти</button>
+                </form>
+
+                <div class="text-center mb-3">
+                    Нет аккаунта? <a th:href="@{/register}">Зарегистрироваться</a>
+                </div>
+
+                <div class="demo-creds">
+                    <div class="mb-1"><strong>Тестовые учётные данные:</strong></div>
+                    <div>Админ — <code>admin</code> / <code>admin123</code></div>
+                    <div>Студент — <code>student</code> / <code>student123</code></div>
+                    <div>Психолог — <code>psychologist</code> / <code>psychologist123</code></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

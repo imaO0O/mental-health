@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"D:\\\\CSA\")",
+      "Bash(extract-text \"D:\\\\CSA\\\\ПЗ_образец.docx\")",
+      "Bash(where extract-text *)",
+      "Bash(where pandoc *)",
+      "Bash(where python *)",
+      "Bash(ls \"C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\4ddda1e2-fe61-422d-bca8-72a77c3bb88e\\\\855c077f-5ef5-4c57-b967-b2b4b18c03a1\\\\skills\\\\docx\")",
+      "Bash(python \"C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\4ddda1e2-fe61-422d-bca8-72a77c3bb88e\\\\855c077f-5ef5-4c57-b967-b2b4b18c03a1\\\\skills\\\\docx\\\\scripts\\\\office\\\\unpack.py\" \"D:\\\\CSA\\\\ПЗ_образец.docx\" \"D:\\\\CSA\\\\sample_unpacked\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, r'C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\4ddda1e2-fe61-422d-bca8-72a77c3bb88e\\\\855c077f-5ef5-4c57-b967-b2b4b18c03a1\\\\skills\\\\docx\\\\scripts'\\); from office import unpack; unpack.main\\([r'D:\\\\CSA\\\\ПЗ_образец.docx', r'D:\\\\CSA\\\\sample_unpacked']\\)\")",
+      "Bash(python -c \"import defusedxml; print\\('OK'\\)\")",
+      "Bash(python -c \"print\\('hello'\\)\")",
+      "PowerShell(python -c \"print\\('hello'\\); import defusedxml; print\\('defusedxml ok'\\)\")",
+      "PowerShell($env:PYTHONUTF8 = \"1\"; & \"C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -X utf8 -c \"from docx import Document; d = Document\\(r'D:\\\\CSA\\\\PZ_mental_health.docx'\\); print\\('Paragraphs:', len\\(d.paragraphs\\)\\); print\\('Tables:', len\\(d.tables\\)\\); print\\('First few:'\\); [print\\(repr\\(p.text[:80]\\)\\) for p in d.paragraphs[:5]]\")"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат теста</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #4a90a4 !important; }
+        .result-card { 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .result-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+        }
+        .btn-primary { background-color: #4a90a4; border-color: #4a90a4; }
+        @media print {
+            .navbar, .no-print, .btn { display: none !important; }
+            body { background: #fff; }
+            .result-card, .card { box-shadow: none; border: 1px solid #ccc; }
+            .result-header { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
+                <a class="nav-link" th:href="@{/student/results}">Мои результаты</a>
+                <a class="nav-link" th:href="@{/student/recommendations}">Рекомендации</a>
+                <a class="nav-link" th:href="@{/student/profile}">Профиль</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="result-card card">
+                    <div class="result-header text-center">
+                        <h1 class="mb-3">Результат тестирования</h1>
+                        <div class="score-display">
+                            <span th:text="${score}">0</span><span th:if="${maxScore != null and maxScore > 0}" th:text="' / ' + ${maxScore}"></span>
+                        </div>
+                        <p class="mb-0">
+                            баллов<span th:if="${percent != null and maxScore != null and maxScore > 0}" th:text="' (' + ${percent} + '%)'"></span>
+                        </p>
+                    </div>
+                    <div class="card-body p-4">
+                        <h4 class="card-title mb-3" th:text="${test.name}">Название теста</h4>
+
+                        <div class="alert alert-info" th:if="${stressLevel}">
+                            <h5>Уровень стресса: <span th:text="${stressLevel.name}">Уровень</span></h5>
+                            <p class="mb-0" th:if="${maxScore != null and maxScore > 0}">
+                                Балл: <strong th:text="${score}">0</strong> из
+                                <strong th:text="${maxScore}">0</strong>
+                                (<strong th:text="${percent} + '%'">0%</strong> от максимума теста).
+                                Уровень определяется по доле набранных баллов.
+                            </p>
+                            <p class="mb-0 text-muted small" th:if="${maxScore == null or maxScore == 0}">
+                                Уровень определён на основе вашего результата.
+                            </p>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5>Ваш результат:</h5>
+                            <p>Вы набрали <strong th:text="${score}">0</strong> баллов.</p>
+                            <p th:if="${result != null}" class="text-muted mb-0">
+                                Дата прохождения:
+                                <span th:text="${#temporals.format(result.dateTaken, 'dd.MM.yyyy')}"></span>
+                            </p>
+                        </div>
+
+                        <div class="mt-4" th:if="${recommendations != null}">
+                            <h5>💡 Рекомендации</h5>
+                            <ol th:if="${not #lists.isEmpty(recommendations)}">
+                                <li th:each="rec : ${recommendations}" class="mb-2"
+                                    th:text="${rec.recommendationText}"></li>
+                            </ol>
+                            <div th:if="${#lists.isEmpty(recommendations)}" class="alert alert-secondary">
+                                Рекомендации для этого уровня стресса пока не заданы.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4 no-print">
+                            <button class="btn btn-outline-primary" onclick="window.print()">🖨 Распечатать</button>
+                            <a th:href="@{/student/dashboard}" class="btn btn-primary">Вернуться к тестам</a>
+                            <a th:href="@{/student/results}" class="btn btn-outline-secondary">Все результаты</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

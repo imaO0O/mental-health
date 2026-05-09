@@ -1,0 +1,3 @@
+-- Backup of original data.sql (now disabled).
+-- Initial data is seeded by DataInitializer.java (idempotent via Java),
+-- so SQL-level seeding is redundant and was causing duplicates on every restart.

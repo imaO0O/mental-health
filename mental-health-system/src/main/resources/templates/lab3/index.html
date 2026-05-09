@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа №3 — Хранимые процедуры</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background: #f5f7fb; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .nav-tabs .nav-link.active { font-weight: 600; }
+        table.dgv { font-size: .85rem; }
+        table.dgv th { background: #eef0fb; }
+        .panel-before { background: #fff7e6; border: 1px solid #ffe2a8; border-radius: 8px; padding: 12px; }
+        .panel-after { background: #e6f7ec; border: 1px solid #a8e6c0; border-radius: 8px; padding: 12px; }
+        .badge-code-0 { background: #28a745; }
+        .badge-code-1 { background: #ffc107; color: #000; }
+        .badge-code-2 { background: #dc3545; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark px-4">
+    <span class="navbar-brand">🧠 Mental Health System · ЛР №3</span>
+    <div>
+        <a class="nav-link text-white d-inline" th:href="@{/}">Главная</a>
+        <a class="nav-link text-white d-inline" th:href="@{/lab5}">ЛР №5</a>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <h1 class="mb-2">Лабораторная работа №3</h1>
+    <p class="text-muted">
+        Хранимые процедуры PostgreSQL, вызываемые из Java через
+        <code>JdbcTemplate</code> (аналог <code>SqlCommand</code> и <code>SqlDataAdapter</code>
+        в C#). Тематика — мониторинг ментального здоровья: «товары» → тесты,
+        «поставки» → результаты тестов, «поставщики» → психологи.
+    </p>
+
+    <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+    <div th:if="${err}" class="alert alert-danger" th:text="${err}"></div>
+
+    <ul class="nav nav-tabs mb-3" id="tabs">
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='1'}? active" th:href="@{/lab3(tab=1)}">1. Снизить баллы на N%</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='2'}? active" th:href="@{/lab3(tab=2)}">2. Добавить тест</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='3'}? active" th:href="@{/lab3(tab=3)}">3. Удалить результаты</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='4'}? active" th:href="@{/lab3(tab=4)}">4. Удалить тест (коды ошибок)</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='5'}? active" th:href="@{/lab3(tab=5)}">5. Сумма прохождений</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='6'}? active" th:href="@{/lab3(tab=6)}">6. CRUD психологов</a></li>
+    </ul>
+
+    <!-- ============== Вкладка 1 ============== -->
+    <div th:if="${tab=='1'}">
+        <h4>1. <code>sp_lab3_decrease_scores(p_percent)</code></h4>
+        <p class="text-muted small">
+            Снижает <code>total_score</code> у всех результатов на заданный процент
+            (моделирует положительный эффект психотерапевтической программы — аналог
+            «уменьшить цену всех товаров на 20%»).
+        </p>
+        <form method="post" th:action="@{/lab3/task1}" class="row g-2 mb-3">
+            <div class="col-auto">
+                <input type="number" name="percent" min="0" max="100" value="20" class="form-control" required>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary">Выполнить процедуру</button>
+            </div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-6" th:if="${beforeResults}">
+                <div class="panel-before">
+                    <strong>📋 Снимок ДО выполнения</strong>
+                    <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after">
+                    <strong>✅ Снимок ПОСЛЕ выполнения (текущее содержимое <code>test_results</code>)</strong>
+                    <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== Вкладка 2 ============== -->
+    <div th:if="${tab=='2'}">
+        <h4>2. <code>sp_lab3_add_test(p_name, p_description, p_instructions)</code></h4>
+        <p class="text-muted small">Добавляет новый психологический тест.</p>
+        <form method="post" th:action="@{/lab3/task2}" class="row g-2 mb-3">
+            <div class="col-md-4"><input class="form-control" name="name" placeholder="Название теста *" required></div>
+            <div class="col-md-4"><input class="form-control" name="description" placeholder="Описание"></div>
+            <div class="col-md-3"><input class="form-control" name="instructions" placeholder="Инструкция"></div>
+            <div class="col-md-1"><button class="btn btn-primary w-100">+ Добавить</button></div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-6" th:if="${beforeTests}">
+                <div class="panel-before">
+                    <strong>📋 Снимок ДО</strong>
+                    <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after">
+                    <strong>✅ Снимок ПОСЛЕ (таблица <code>tests</code>)</strong>
+                    <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== Вкладка 3 ============== -->
+    <div th:if="${tab=='3'}">
+        <h4>3. <code>sp_lab3_delete_results(p_student_login, p_test_name)</code></h4>
+        <p class="text-muted small">
+            Удаляет результаты заданного студента по заданному тесту
+            (аналог «удалить поставки заданного поставщика и товара»).
+        </p>
+        <form method="post" th:action="@{/lab3/task3}" class="row g-2 mb-3">
+            <div class="col-md-4"><input class="form-control" name="studentLogin" placeholder="Логин студента *" required></div>
+            <div class="col-md-5"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
+            <div class="col-md-3"><button class="btn btn-danger w-100">Удалить результаты</button></div>
+        </form>
+
+        <div class="row">
+            <div class="col-md-6" th:if="${beforeResults}">
+                <div class="panel-before">
+                    <strong>📋 Снимок ДО</strong>
+                    <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after">
+                    <strong>✅ Снимок ПОСЛЕ</strong>
+                    <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== Вкладка 4 ============== -->
+    <div th:if="${tab=='4'}">
+        <h4>4. <code>fn_lab3_delete_test(p_test_name)</code> · возвращает код 0/1/2</h4>
+        <ul class="text-muted small">
+            <li><span class="badge badge-code-0">0</span> — удаление прошло успешно;</li>
+            <li><span class="badge badge-code-1">1</span> — удаление невозможно: есть связанные записи (результаты студентов);</li>
+            <li><span class="badge badge-code-2">2</span> — теста с таким наименованием нет.</li>
+        </ul>
+        <form method="post" th:action="@{/lab3/task4}" class="row g-2 mb-3">
+            <div class="col-md-8"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
+            <div class="col-md-4"><button class="btn btn-danger w-100">Вызвать функцию</button></div>
+        </form>
+
+        <div th:if="${returnCode != null}" class="alert alert-info">
+            Код возврата:
+            <span class="badge"
+                  th:classappend="${returnCode == 0} ? ' badge-code-0' : (${returnCode == 1} ? ' badge-code-1' : ' badge-code-2')"
+                  th:text="${returnCode}">0</span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6" th:if="${beforeTests}">
+                <div class="panel-before"><strong>📋 ДО</strong>
+                    <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after"><strong>✅ ПОСЛЕ</strong>
+                    <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============== Вкладка 5 ============== -->
+    <div th:if="${tab=='5'}">
+        <h4>5. <code>sp_lab3_test_total(p_test_name, OUT p_total)</code></h4>
+        <p class="text-muted small">
+            Возвращает суммарное количество прохождений заданного теста
+            (аналог «суммарного объёма поставок» через OUT-параметр).
+        </p>
+        <form method="post" th:action="@{/lab3/task5}" class="row g-2 mb-3">
+            <div class="col-md-8"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
+            <div class="col-md-4"><button class="btn btn-primary w-100">Вызвать процедуру</button></div>
+        </form>
+
+        <div th:if="${totalCount != null}" class="alert alert-success">
+            Суммарное количество прохождений: <strong th:text="${totalCount}">0</strong>
+        </div>
+
+        <div class="panel-after">
+            <strong>📋 Текущее содержимое <code>test_results</code></strong>
+            <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+        </div>
+    </div>
+
+    <!-- ============== Вкладка 6 ============== -->
+    <div th:if="${tab=='6'}">
+        <h4>6. CRUD по таблице психологов · <code>SqlDataAdapter</code> → <code>JdbcTemplate</code></h4>
+        <p class="text-muted small">
+            Просмотр / добавление / изменение / удаление записей таблицы
+            <code>psychologists</code>. Изменение выполняется через ХП
+            <code>sp_lab3_psychologist_update</code>.
+        </p>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6>Добавить психолога</h6>
+                <form method="post" th:action="@{/lab3/task6/insert}" class="row g-2">
+                    <div class="col-md-3"><input type="number" class="form-control" name="personnelNumber" placeholder="Табельный № (PK) *" required></div>
+                    <div class="col-md-3"><input class="form-control" name="lastName" placeholder="Фамилия *" required></div>
+                    <div class="col-md-3"><input class="form-control" name="firstName" placeholder="Имя *" required></div>
+                    <div class="col-md-3"><input class="form-control" name="middleName" placeholder="Отчество"></div>
+                    <div class="col-md-3"><input class="form-control" name="position" placeholder="Должность"></div>
+                    <div class="col-md-3"><input class="form-control" name="email" placeholder="Email"></div>
+                    <div class="col-md-3"><input class="form-control" name="phone" placeholder="Телефон"></div>
+                    <div class="col-md-3"><button class="btn btn-success w-100">+ Добавить</button></div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6" th:if="${beforePsy}">
+                <div class="panel-before">
+                    <strong>📋 ДО</strong>
+                    <div th:replace="~{lab3/index :: psychologistsTable(rows=${beforePsy}, editable=false)}"></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="panel-after">
+                    <strong>✅ Текущее содержимое (ПОСЛЕ)</strong>
+                    <div th:replace="~{lab3/index :: psychologistsTable(rows=${psychologists}, editable=true)}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== Фрагменты таблиц ====================== -->
+
+<div th:fragment="resultsTable(rows)" class="table-responsive mt-2">
+    <table class="table table-sm dgv">
+        <thead>
+            <tr><th>id</th><th>студент</th><th>тест</th><th>балл</th><th>дата</th><th>уровень</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="r : ${rows}">
+                <td th:text="${r['result_id']}"></td>
+                <td th:text="${r['student_login']}"></td>
+                <td th:text="${r['test_name']}"></td>
+                <td th:text="${r['total_score']}"></td>
+                <td th:text="${r['date_taken']}"></td>
+                <td th:text="${r['stress_level']}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="6" class="text-muted text-center">— пусто —</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div th:fragment="testsTable(rows)" class="table-responsive mt-2">
+    <table class="table table-sm dgv">
+        <thead>
+            <tr><th>id</th><th>name</th><th>description</th><th>active</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="r : ${rows}">
+                <td th:text="${r['test_id']}"></td>
+                <td th:text="${r['name']}"></td>
+                <td th:text="${r['description']}"></td>
+                <td th:text="${r['is_active']}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="4" class="text-muted text-center">— пусто —</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div th:fragment="psychologistsTable(rows, editable)" class="mt-2">
+    <!-- HTML5 form attribute позволяет привязать input/button к <form> вне <tr> -->
+    <th:block th:if="${editable}">
+        <form th:each="r : ${rows}" th:id="'upd-' + ${r['id']}"
+              method="post" th:action="@{/lab3/task6/update}" class="d-none">
+            <input type="hidden" name="id" th:value="${r['id']}">
+        </form>
+        <form th:each="r : ${rows}" th:id="'del-' + ${r['id']}"
+              method="post" th:action="@{/lab3/task6/delete}"
+              onsubmit="return confirm('Удалить психолога?')" class="d-none">
+            <input type="hidden" name="id" th:value="${r['id']}">
+        </form>
+    </th:block>
+
+    <div class="table-responsive">
+    <table class="table table-sm dgv align-middle">
+        <thead>
+            <tr><th>Таб. № (PK)</th><th>Фамилия</th><th>Имя</th><th>Отч.</th>
+                <th>Должность</th><th>Email</th><th>Телефон</th>
+                <th th:if="${editable}">Действия</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="r : ${rows}" th:if="${editable}">
+                <td><span class="badge bg-dark" th:text="${r['id']}"></span></td>
+                <td><input class="form-control form-control-sm" name="lastName"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['last_name']}" required></td>
+                <td><input class="form-control form-control-sm" name="firstName"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['first_name']}" required></td>
+                <td><input class="form-control form-control-sm" name="middleName"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['middle_name']}"></td>
+                <td><input class="form-control form-control-sm" name="position"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['position']}"></td>
+                <td><input class="form-control form-control-sm" name="email"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['email']}"></td>
+                <td><input class="form-control form-control-sm" name="phone"
+                           th:form="'upd-' + ${r['id']}" th:value="${r['phone']}"></td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-primary" type="submit"
+                                th:form="'upd-' + ${r['id']}" title="Сохранить">💾</button>
+                        <button class="btn btn-sm btn-outline-danger" type="submit"
+                                th:form="'del-' + ${r['id']}" title="Удалить">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+            <tr th:each="r : ${rows}" th:unless="${editable}">
+                <td><span class="badge bg-dark" th:text="${r['id']}"></span></td>
+                <td th:text="${r['last_name']}"></td>
+                <td th:text="${r['first_name']}"></td>
+                <td th:text="${r['middle_name']}"></td>
+                <td th:text="${r['position']}"></td>
+                <td th:text="${r['email']}"></td>
+                <td th:text="${r['phone']}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="8" class="text-muted text-center">— пусто —</td></tr>
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

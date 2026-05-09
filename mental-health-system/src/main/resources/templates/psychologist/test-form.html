@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${test != null and test.id != null} ? 'Редактирование теста' : 'Создание теста'">Тест</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #5a4ba2 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 th:text="${test != null and test.id != null} ? '✏️ Редактирование теста' : '➕ Создание теста'">Тест</h1>
+                
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <form th:if="${test != null and test.id != null}"
+                              th:action="@{/psychologist/test/{id}/update(id=${test.id})}" method="post">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Название теста *</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                       th:value="${test.name}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" name="description"
+                                          rows="3" th:text="${test.description}"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="instructions" class="form-label">Инструкция</label>
+                                <textarea class="form-control" id="instructions" name="instructions"
+                                          rows="3" th:text="${test.instructions}"></textarea>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="isActive" name="isActive"
+                                       th:checked="${test.isActive}">
+                                <label class="form-check-label" for="isActive">Активен</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <a th:href="@{/psychologist/tests}" class="btn btn-outline-secondary">Отмена</a>
+                        </form>
+
+                        <form th:if="${test == null or test.id == null}"
+                              th:action="@{/psychologist/test/create}" method="post">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Название теста *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="instructions" class="form-label">Инструкция</label>
+                                <textarea class="form-control" id="instructions" name="instructions" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Создать</button>
+                            <a th:href="@{/psychologist/tests}" class="btn btn-outline-secondary">Отмена</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

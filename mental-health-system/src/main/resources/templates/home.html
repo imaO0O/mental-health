@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .welcome-card {
+            max-width: 500px;
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="card welcome-card p-4">
+        <div class="card-body text-center">
+            <h2 class="mb-4">🧠 Система психологического тестирования</h2>
+            <p class="text-muted mb-4">Добро пожаловать!</p>
+            
+            <div sec:authorize="isAuthenticated()" class="mb-4">
+                <p>Вы вошли как <strong sec:authentication="name">User</strong></p>
+                <a th:href="@{/logout}" class="btn btn-outline-danger">Выйти</a>
+            </div>
+            
+            <div sec:authorize="!isAuthenticated()" class="mb-4">
+                <a th:href="@{/login}" class="btn btn-primary me-2">Войти</a>
+                <a th:href="@{/register}" class="btn btn-outline-primary">Регистрация</a>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div>
+                <h5>Лабораторные работы</h5>
+                <a th:href="@{/lab1}" class="btn btn-outline-secondary btn-sm mt-2">Лабораторная 1</a>
+                <a th:href="@{/lab3}" class="btn btn-outline-secondary btn-sm mt-2">Лабораторная 3</a>
+                <a th:href="@{/lab5}" class="btn btn-outline-secondary btn-sm mt-2">Лабораторная 5</a>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

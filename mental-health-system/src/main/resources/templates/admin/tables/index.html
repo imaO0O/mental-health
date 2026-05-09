@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление таблицами</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #2c3e50 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .table-card { transition: transform 0.2s; cursor: pointer; }
+        .table-card:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/admin/dashboard}">Панель управления</a>
+                <a class="nav-link" th:href="@{/admin/users}">Пользователи</a>
+                <a class="nav-link" th:href="@{/admin/tables}">Таблицы</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1>📊 Управление таблицами базы данных</h1>
+                <p class="text-muted">Просмотр и редактирование записей таблиц</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/roles'">
+                    <div class="card-body text-center">
+                        <h3>🔑</h3>
+                        <h5 class="card-title">Роли</h5>
+                        <p class="card-text text-muted">Управление ролями пользователей</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/stress-levels'">
+                    <div class="card-body text-center">
+                        <h3>📈</h3>
+                        <h5 class="card-title">Уровни стресса</h5>
+                        <p class="card-text text-muted">Категории уровней стресса</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/students'">
+                    <div class="card-body text-center">
+                        <h3>👨‍🎓</h3>
+                        <h5 class="card-title">Студенты</h5>
+                        <p class="card-text text-muted">Данные о студентах</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/psychologists'">
+                    <div class="card-body text-center">
+                        <h3>👨‍⚕️</h3>
+                        <h5 class="card-title">Психологи</h5>
+                        <p class="card-text text-muted">Данные о психологах</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/tests'">
+                    <div class="card-body text-center">
+                        <h3>📋</h3>
+                        <h5 class="card-title">Тесты</h5>
+                        <p class="card-text text-muted">Список тестов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/questions'">
+                    <div class="card-body text-center">
+                        <h3>❓</h3>
+                        <h5 class="card-title">Вопросы</h5>
+                        <p class="card-text text-muted">Вопросы тестов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/answers'">
+                    <div class="card-body text-center">
+                        <h3>✅</h3>
+                        <h5 class="card-title">Ответы</h5>
+                        <p class="card-text text-muted">Варианты ответов</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/recommendations'">
+                    <div class="card-body text-center">
+                        <h3>💡</h3>
+                        <h5 class="card-title">Рекомендации</h5>
+                        <p class="card-text text-muted">Рекомендации по уровням стресса</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card table-card" onclick="location.href='/admin/tables/results'">
+                    <div class="card-body text-center">
+                        <h3>📊</h3>
+                        <h5 class="card-title">Результаты</h5>
+                        <p class="card-text text-muted">Результаты тестирований</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>

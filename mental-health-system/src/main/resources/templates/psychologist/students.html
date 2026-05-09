@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Студенты</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #5a4ba2 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
+                <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
+                <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
+                <a class="nav-link" th:href="@{/psychologist/recommendation/create}">Рекомендация</a>
+                <a class="nav-link" th:href="@{/psychologist/statistics}">Статистика</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1>👨‍🎓 Студенты</h1>
+                <p class="text-muted">Список студентов и их результаты</p>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" th:action="@{/psychologist/students}" class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted mb-1">Поиск по ФИО или логину</label>
+                        <input type="text" name="q" class="form-control" th:value="${q}" placeholder="Иванов / ivan...">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1">Группа</label>
+                        <input list="groupsList" type="text" name="group" class="form-control"
+                               th:value="${group}" placeholder="например, ИКПИ-21">
+                        <datalist id="groupsList">
+                            <option th:each="g : ${groups}" th:value="${g}"></option>
+                        </datalist>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">🔍 Найти</button>
+                        <a th:href="@{/psychologist/students}" class="btn btn-outline-secondary">Сброс</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive" th:if="${students}">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>№ зачётной книжки</th>
+                                        <th>ФИО</th>
+                                        <th>Группа</th>
+                                        <th>Логин</th>
+                                        <th>Email</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="student, iterStat : ${students}">
+                                        <td>
+                                            <span class="badge bg-dark"
+                                                  th:text="${student.recordBookNumber} ?: '—'">З-2024-0001</span>
+                                        </td>
+                                        <td th:text="${student.fullName} ?: 'Не указано'">ФИО</td>
+                                        <td>
+                                            <span class="badge bg-secondary"
+                                                  th:text="${student.groupName} ?: '—'">ИВТ-41</span>
+                                        </td>
+                                        <td th:text="${student.username}">username</td>
+                                        <td th:text="${student.email}">email</td>
+                                        <td>
+                                            <a th:href="@{/psychologist/student/{id}/results(id=${student.id})}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                Результаты
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info" th:if="${#lists.isEmpty(students)}">
+                            Студенты ещё не зарегистрированы.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
