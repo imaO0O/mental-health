@@ -12,7 +12,9 @@
       "Bash(python -c \"import defusedxml; print\\('OK'\\)\")",
       "Bash(python -c \"print\\('hello'\\)\")",
       "PowerShell(python -c \"print\\('hello'\\); import defusedxml; print\\('defusedxml ok'\\)\")",
-      "PowerShell($env:PYTHONUTF8 = \"1\"; & \"C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -X utf8 -c \"from docx import Document; d = Document\\(r'D:\\\\CSA\\\\PZ_mental_health.docx'\\); print\\('Paragraphs:', len\\(d.paragraphs\\)\\); print\\('Tables:', len\\(d.tables\\)\\); print\\('First few:'\\); [print\\(repr\\(p.text[:80]\\)\\) for p in d.paragraphs[:5]]\")"
+      "PowerShell($env:PYTHONUTF8 = \"1\"; & \"C:\\\\Users\\\\LuxuryComp\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python313\\\\python.exe\" -X utf8 -c \"from docx import Document; d = Document\\(r'D:\\\\CSA\\\\PZ_mental_health.docx'\\); print\\('Paragraphs:', len\\(d.paragraphs\\)\\); print\\('Tables:', len\\(d.tables\\)\\); print\\('First few:'\\); [print\\(repr\\(p.text[:80]\\)\\) for p in d.paragraphs[:5]]\")",
+      "Bash(./mvnw.cmd compile *)",
+      "Bash(./mvnw.cmd spring-boot:run)"
     ]
   }
 }
