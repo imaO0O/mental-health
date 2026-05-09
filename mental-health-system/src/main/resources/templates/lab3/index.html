@@ -83,11 +83,12 @@
 
     <!-- ============== Вкладка 2 ============== -->
     <div th:if="${tab=='2'}">
-        <h4>2. <code>sp_lab3_add_test(p_name, p_description, p_instructions)</code></h4>
+        <h4>2. <code>sp_lab3_add_test(p_test_code, p_name, p_description, p_instructions)</code></h4>
         <p class="text-muted small">Добавляет новый психологический тест.</p>
         <form method="post" th:action="@{/lab3/task2}" class="row g-2 mb-3">
-            <div class="col-md-4"><input class="form-control" name="name" placeholder="Название теста *" required></div>
-            <div class="col-md-4"><input class="form-control" name="description" placeholder="Описание"></div>
+            <div class="col-md-2"><input class="form-control" name="testCode" placeholder="Шифр (PSS-10) *" required></div>
+            <div class="col-md-3"><input class="form-control" name="name" placeholder="Название теста *" required></div>
+            <div class="col-md-3"><input class="form-control" name="description" placeholder="Описание"></div>
             <div class="col-md-3"><input class="form-control" name="instructions" placeholder="Инструкция"></div>
             <div class="col-md-1"><button class="btn btn-primary w-100">+ Добавить</button></div>
         </form>
@@ -110,15 +111,15 @@
 
     <!-- ============== Вкладка 3 ============== -->
     <div th:if="${tab=='3'}">
-        <h4>3. <code>sp_lab3_delete_results(p_student_login, p_test_name)</code></h4>
+        <h4>3. <code>sp_lab3_delete_protocols(p_student_login, p_test_code)</code></h4>
         <p class="text-muted small">
-            Удаляет результаты заданного студента по заданному тесту
+            Удаляет протоколы тестирования заданного студента по заданному тесту
             (аналог «удалить поставки заданного поставщика и товара»).
         </p>
         <form method="post" th:action="@{/lab3/task3}" class="row g-2 mb-3">
             <div class="col-md-4"><input class="form-control" name="studentLogin" placeholder="Логин студента *" required></div>
-            <div class="col-md-5"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
-            <div class="col-md-3"><button class="btn btn-danger w-100">Удалить результаты</button></div>
+            <div class="col-md-5"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
+            <div class="col-md-3"><button class="btn btn-danger w-100">Удалить протоколы</button></div>
         </form>
 
         <div class="row">
@@ -139,14 +140,14 @@
 
     <!-- ============== Вкладка 4 ============== -->
     <div th:if="${tab=='4'}">
-        <h4>4. <code>fn_lab3_delete_test(p_test_name)</code> · возвращает код 0/1/2</h4>
+        <h4>4. <code>fn_lab3_delete_test(p_test_code)</code> · возвращает код 0/1/2</h4>
         <ul class="text-muted small">
             <li><span class="badge badge-code-0">0</span> — удаление прошло успешно;</li>
-            <li><span class="badge badge-code-1">1</span> — удаление невозможно: есть связанные записи (результаты студентов);</li>
-            <li><span class="badge badge-code-2">2</span> — теста с таким наименованием нет.</li>
+            <li><span class="badge badge-code-1">1</span> — удаление невозможно: есть связанные записи (протоколы тестирования);</li>
+            <li><span class="badge badge-code-2">2</span> — теста с таким шифром нет.</li>
         </ul>
         <form method="post" th:action="@{/lab3/task4}" class="row g-2 mb-3">
-            <div class="col-md-8"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
+            <div class="col-md-8"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
             <div class="col-md-4"><button class="btn btn-danger w-100">Вызвать функцию</button></div>
         </form>
 
@@ -173,13 +174,13 @@
 
     <!-- ============== Вкладка 5 ============== -->
     <div th:if="${tab=='5'}">
-        <h4>5. <code>sp_lab3_test_total(p_test_name, OUT p_total)</code></h4>
+        <h4>5. <code>sp_lab3_test_total(p_test_code, OUT p_total)</code></h4>
         <p class="text-muted small">
             Возвращает суммарное количество прохождений заданного теста
             (аналог «суммарного объёма поставок» через OUT-параметр).
         </p>
         <form method="post" th:action="@{/lab3/task5}" class="row g-2 mb-3">
-            <div class="col-md-8"><input class="form-control" name="testName" placeholder="Название теста *" required></div>
+            <div class="col-md-8"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
             <div class="col-md-4"><button class="btn btn-primary w-100">Вызвать процедуру</button></div>
         </form>
 
@@ -188,7 +189,7 @@
         </div>
 
         <div class="panel-after">
-            <strong>📋 Текущее содержимое <code>test_results</code></strong>
+            <strong>📋 Текущее содержимое <code>test_protocols</code></strong>
             <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
         </div>
     </div>

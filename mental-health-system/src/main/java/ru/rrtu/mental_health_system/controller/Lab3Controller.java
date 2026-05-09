@@ -149,19 +149,19 @@ public class Lab3Controller {
                               RedirectAttributes ra) {
         ra.addFlashAttribute("beforePsy", fetchPsychologists());
         try {
-            // Создаём пользователя-заглушку, чтобы соблюсти FK psychologists.user_id
+            // Сначала создаём учётную запись (PK = login), затем психолога с FK login.
             String login = "psy_" + (System.currentTimeMillis() % 100000000L);
-            Long userId = jdbc.queryForObject("""
-                INSERT INTO users(login, password_hash, role_id)
-                SELECT ?, ?, role_id FROM roles WHERE name='PSYCHOLOGIST'
-                RETURNING user_id
-                """, Long.class, login, "{noop}stub");
             jdbc.update("""
-                INSERT INTO psychologists(personnel_number, user_id, last_name, first_name, middle_name,
+                INSERT INTO users(login, password_hash, role_name)
+                VALUES (?, ?, 'PSYCHOLOGIST')
+                """, login, "{noop}stub");
+            jdbc.update("""
+                INSERT INTO psychologists(personnel_number, login, last_name, first_name, middle_name,
                                           position, email, phone)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, personnelNumber, userId, lastName, firstName, middleName, position, email, phone);
-            ra.addFlashAttribute("msg", "Психолог добавлен (таб. №=" + personnelNumber + ", login=" + login + ").");
+                """, personnelNumber, login, lastName, firstName, middleName, position, email, phone);
+            ra.addFlashAttribute("msg",
+                    "Психолог добавлен (таб. №=" + personnelNumber + ", login=" + login + ").");
         } catch (DataAccessException e) {
             ra.addFlashAttribute("err", "Ошибка: " + e.getMostSpecificCause().getMessage());
         }
@@ -193,13 +193,13 @@ public class Lab3Controller {
     public String task6Delete(@RequestParam("id") Long personnelNumber, RedirectAttributes ra) {
         ra.addFlashAttribute("beforePsy", fetchPsychologists());
         try {
-            // Удаляем психолога; user_id привязан CASCADE — удалим и пользователя.
-            Long userId = jdbc.queryForObject(
-                    "SELECT user_id FROM psychologists WHERE personnel_number = ?",
-                    Long.class, personnelNumber);
+            // Получаем логин (FK), удаляем психолога, затем учётную запись.
+            String login = jdbc.queryForObject(
+                    "SELECT login FROM psychologists WHERE personnel_number = ?",
+                    String.class, personnelNumber);
             jdbc.update("DELETE FROM psychologists WHERE personnel_number = ?", personnelNumber);
-            if (userId != null) {
-                jdbc.update("DELETE FROM users WHERE user_id = ?", userId);
+            if (login != null) {
+                jdbc.update("DELETE FROM users WHERE login = ?", login);
             }
             ra.addFlashAttribute("msg", "Психолог таб. №=" + personnelNumber + " удалён.");
         } catch (DataAccessException e) {
@@ -209,31 +209,38 @@ public class Lab3Controller {
     }
 
     // ───────── вспомогательные SELECT'ы ─────────
+    // Все обращения — к новой схеме БД (естественные ключи, см. ПЗ).
 
     private List<Map<String, Object>> fetchTests() {
+        // Алиас "test_id" сохраняем, чтобы шаблон lab3/index.html
+        // не пришлось менять, но возвращаем шифр теста (естественный PK).
         return jdbc.queryForList("""
-            SELECT test_id, name, description, is_active
-              FROM tests ORDER BY test_id
+            SELECT test_code AS test_id, name, description, is_active
+              FROM tests ORDER BY test_code
             """);
     }
 
     private List<Map<String, Object>> fetchResults() {
+        // Таблица test_results теперь test_protocols, FK по логину/шифру/уровню.
+        // Аналогично — отдаём алиасы старых имён для совместимости с шаблоном.
         return jdbc.queryForList("""
-            SELECT r.result_id, u.login AS student_login,
-                   t.name AS test_name, r.total_score, r.date_taken,
-                   sl.level_name AS stress_level
-              FROM test_results r
-              JOIN students s ON s.record_book_number = r.student_id
-              JOIN users u ON u.user_id = s.user_id
-              JOIN tests t ON t.test_id = r.test_id
-              JOIN stress_levels sl ON sl.level_id = r.level_id
-             ORDER BY r.result_id
+            SELECT p.protocol_number AS result_id,
+                   u.login AS student_login,
+                   t.name AS test_name,
+                   p.total_score,
+                   p.taken_at AS date_taken,
+                   p.level_name AS stress_level
+              FROM test_protocols p
+              JOIN students s ON s.record_book_number = p.record_book_number
+              JOIN users u ON u.login = s.login
+              JOIN tests t ON t.test_code = p.test_code
+             ORDER BY p.protocol_number
             """);
     }
 
     private List<Map<String, Object>> fetchPsychologists() {
-        // PK теперь = personnel_number (числовой), отдельного psychologist_id нет.
-        // Алиас "id" сохраняется для шаблона (в т.ч. имена скрытых форм upd-/del-).
+        // PK = personnel_number; алиас "id" нужен шаблону (скрытые поля
+        // в формах upd-/del-).
         return jdbc.queryForList("""
             SELECT personnel_number AS id, last_name, first_name, middle_name,
                    position, personnel_number, email, phone
