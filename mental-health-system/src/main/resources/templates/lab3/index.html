@@ -6,76 +6,133 @@
     <title>Лабораторная работа №3 — Хранимые процедуры</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
+        :root { --brand-1: #667eea; --brand-2: #764ba2; }
         body { background: #f5f7fb; }
-        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .nav-tabs .nav-link.active { font-weight: 600; }
+        .navbar { background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%); }
+        .nav-tabs .nav-link { color: #4b5563; }
+        .nav-tabs .nav-link.active { font-weight: 600; color: var(--brand-2); }
+        .task-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, .08);
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+        .task-card h4 { margin: 0 0 6px 0; font-weight: 700; }
+        .task-desc { color: #4b5563; margin-bottom: 16px; }
+        .task-desc code { background: #eef0fb; color: #4b3f8f; padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+        .hint {
+            font-size: .82rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .form-section {
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .form-section h6 { font-weight: 600; color: #374151; margin-bottom: 10px; }
         table.dgv { font-size: .85rem; }
-        table.dgv th { background: #eef0fb; }
-        .panel-before { background: #fff7e6; border: 1px solid #ffe2a8; border-radius: 8px; padding: 12px; }
-        .panel-after { background: #e6f7ec; border: 1px solid #a8e6c0; border-radius: 8px; padding: 12px; }
+        table.dgv th { background: #eef0fb; color: #4b3f8f; font-weight: 600; }
+        .panel-before {
+            background: #fff7e6; border: 1px solid #ffe2a8;
+            border-radius: 10px; padding: 14px;
+        }
+        .panel-after {
+            background: #e6f7ec; border: 1px solid #a8e6c0;
+            border-radius: 10px; padding: 14px;
+        }
+        .panel-before h6, .panel-after h6 { font-weight: 600; margin-bottom: 8px; }
         .badge-code-0 { background: #28a745; }
         .badge-code-1 { background: #ffc107; color: #000; }
         .badge-code-2 { background: #dc3545; }
+        .btn-brand {
+            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            border: none; color: #fff; font-weight: 600;
+        }
+        .btn-brand:hover { color: #fff; box-shadow: 0 4px 14px rgba(102, 126, 234, .35); }
     </style>
 </head>
 <body>
 <nav class="navbar navbar-dark px-4">
-    <span class="navbar-brand">🧠 Mental Health System · ЛР №3</span>
+    <span class="navbar-brand">🧠 Mental Health System · Лабораторная работа №3</span>
     <div>
         <a class="nav-link text-white d-inline" th:href="@{/}">Главная</a>
+        <a class="nav-link text-white d-inline" th:href="@{/lab1}">ЛР №1</a>
         <a class="nav-link text-white d-inline" th:href="@{/lab5}">ЛР №5</a>
     </div>
 </nav>
 
 <div class="container py-4">
-    <h1 class="mb-2">Лабораторная работа №3</h1>
+    <h1 class="mb-1">Лабораторная работа №3</h1>
     <p class="text-muted">
-        Хранимые процедуры PostgreSQL, вызываемые из Java через
-        <code>JdbcTemplate</code> (аналог <code>SqlCommand</code> и <code>SqlDataAdapter</code>
-        в C#). Тематика — мониторинг ментального здоровья: «товары» → тесты,
-        «поставки» → результаты тестов, «поставщики» → психологи.
+        Вызов хранимых процедур и функций PostgreSQL из Java через
+        <code>JdbcTemplate</code> (аналог <code>SqlCommand</code>/<code>SqlDataAdapter</code> в C#).
+        Тематика: тесты, протоколы тестирования, психологи.
     </p>
 
     <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
     <div th:if="${err}" class="alert alert-danger" th:text="${err}"></div>
 
+    <!-- общие datalist'ы для подсказок во всех формах -->
+    <datalist id="dl-test-codes">
+        <option th:each="c : ${testCodes}" th:value="${c}"></option>
+    </datalist>
+    <datalist id="dl-student-logins">
+        <option th:each="l : ${studentLogins}" th:value="${l}"></option>
+    </datalist>
+
     <ul class="nav nav-tabs mb-3" id="tabs">
         <li class="nav-item"><a class="nav-link" th:classappend="${tab=='1'}? active" th:href="@{/lab3(tab=1)}">1. Снизить баллы на N%</a></li>
         <li class="nav-item"><a class="nav-link" th:classappend="${tab=='2'}? active" th:href="@{/lab3(tab=2)}">2. Добавить тест</a></li>
-        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='3'}? active" th:href="@{/lab3(tab=3)}">3. Удалить результаты</a></li>
-        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='4'}? active" th:href="@{/lab3(tab=4)}">4. Удалить тест (коды ошибок)</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='3'}? active" th:href="@{/lab3(tab=3)}">3. Удалить протоколы</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab=='4'}? active" th:href="@{/lab3(tab=4)}">4. Удалить тест (коды)</a></li>
         <li class="nav-item"><a class="nav-link" th:classappend="${tab=='5'}? active" th:href="@{/lab3(tab=5)}">5. Сумма прохождений</a></li>
         <li class="nav-item"><a class="nav-link" th:classappend="${tab=='6'}? active" th:href="@{/lab3(tab=6)}">6. CRUD психологов</a></li>
     </ul>
 
     <!-- ============== Вкладка 1 ============== -->
     <div th:if="${tab=='1'}">
-        <h4>1. <code>sp_lab3_decrease_scores(p_percent)</code></h4>
-        <p class="text-muted small">
-            Снижает <code>total_score</code> у всех результатов на заданный процент
-            (моделирует положительный эффект психотерапевтической программы — аналог
-            «уменьшить цену всех товаров на 20%»).
-        </p>
-        <form method="post" th:action="@{/lab3/task1}" class="row g-2 mb-3">
-            <div class="col-auto">
-                <input type="number" name="percent" min="0" max="100" value="20" class="form-control" required>
+        <div class="task-card">
+            <h4>Задание 1. Массовое снижение баллов на N%</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> у всех существующих протоколов тестирования уменьшает
+                итоговый балл на заданный процент. Моделирует ситуацию «после психотерапевтической
+                программы у студентов снизился уровень стресса».</p>
+                <p><strong>Аналог из учебника:</strong> «Снизить цены всех товаров на 20 %».</p>
+                <p><strong>Что вызывается:</strong> процедура <code>sp_lab3_decrease_scores(p_percent)</code>
+                через <code>jdbc.update("CALL ...", percent)</code>.</p>
             </div>
-            <div class="col-auto">
-                <button class="btn btn-primary">Выполнить процедуру</button>
-            </div>
-        </form>
 
-        <div class="row">
-            <div class="col-md-6" th:if="${beforeResults}">
-                <div class="panel-before">
-                    <strong>📋 Снимок ДО выполнения</strong>
-                    <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
-                </div>
+            <div class="form-section">
+                <h6>Параметр</h6>
+                <form method="post" th:action="@{/lab3/task1}" class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small text-muted">Процент снижения (0–100)</label>
+                        <input type="number" name="percent" min="0" max="100" value="20"
+                               class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-brand">Выполнить процедуру</button>
+                    </div>
+                </form>
+                <div class="hint">Например, ввод <code>20</code> означает: новый балл = старый × 0.8.</div>
             </div>
-            <div class="col-md-6">
-                <div class="panel-after">
-                    <strong>✅ Снимок ПОСЛЕ выполнения (текущее содержимое <code>test_results</code>)</strong>
-                    <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6" th:if="${beforeResults}">
+                    <div class="panel-before">
+                        <h6>📋 Снимок таблицы «Протоколы» ДО выполнения</h6>
+                        <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel-after">
+                        <h6>✅ Снимок ПОСЛЕ выполнения</h6>
+                        <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,27 +140,59 @@
 
     <!-- ============== Вкладка 2 ============== -->
     <div th:if="${tab=='2'}">
-        <h4>2. <code>sp_lab3_add_test(p_test_code, p_name, p_description, p_instructions)</code></h4>
-        <p class="text-muted small">Добавляет новый психологический тест.</p>
-        <form method="post" th:action="@{/lab3/task2}" class="row g-2 mb-3">
-            <div class="col-md-2"><input class="form-control" name="testCode" placeholder="Шифр (PSS-10) *" required></div>
-            <div class="col-md-3"><input class="form-control" name="name" placeholder="Название теста *" required></div>
-            <div class="col-md-3"><input class="form-control" name="description" placeholder="Описание"></div>
-            <div class="col-md-3"><input class="form-control" name="instructions" placeholder="Инструкция"></div>
-            <div class="col-md-1"><button class="btn btn-primary w-100">+ Добавить</button></div>
-        </form>
+        <div class="task-card">
+            <h4>Задание 2. Добавить новый психологический тест</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> вставляет новую запись в таблицу <code>tests</code>
+                (шифр теста, название, описание, инструкция).</p>
+                <p><strong>Аналог из учебника:</strong> «Добавить новый товар».</p>
+                <p><strong>Что вызывается:</strong> процедура
+                <code>sp_lab3_add_test(p_test_code, p_name, p_description, p_instructions)</code>.</p>
+                <p><em>⚠ Шифр теста — естественный первичный ключ, должен быть уникальным.</em></p>
+            </div>
 
-        <div class="row">
-            <div class="col-md-6" th:if="${beforeTests}">
-                <div class="panel-before">
-                    <strong>📋 Снимок ДО</strong>
-                    <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
+            <div class="form-section">
+                <h6>Параметры нового теста</h6>
+                <form method="post" th:action="@{/lab3/task2}" class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Шифр (PK) *</label>
+                        <input class="form-control" name="testCode" placeholder="напр. PSS-10" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Название теста *</label>
+                        <input class="form-control" name="name" placeholder="Шкала воспринимаемого стресса" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Описание</label>
+                        <input class="form-control" name="description" placeholder="Опросник…">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Инструкция</label>
+                        <input class="form-control" name="instructions" placeholder="Выберите вариант…">
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button class="btn btn-brand">+ Добавить тест</button>
+                    </div>
+                </form>
+                <div class="hint">Уже существуют:
+                    <span th:each="c, st : ${testCodes}">
+                        <code th:text="${c}"></code><span th:if="${!st.last}">, </span>
+                    </span>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="panel-after">
-                    <strong>✅ Снимок ПОСЛЕ (таблица <code>tests</code>)</strong>
-                    <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6" th:if="${beforeTests}">
+                    <div class="panel-before">
+                        <h6>📋 Снимок таблицы «Тесты» ДО</h6>
+                        <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel-after">
+                        <h6>✅ Снимок ПОСЛЕ</h6>
+                        <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -111,28 +200,49 @@
 
     <!-- ============== Вкладка 3 ============== -->
     <div th:if="${tab=='3'}">
-        <h4>3. <code>sp_lab3_delete_protocols(p_student_login, p_test_code)</code></h4>
-        <p class="text-muted small">
-            Удаляет протоколы тестирования заданного студента по заданному тесту
-            (аналог «удалить поставки заданного поставщика и товара»).
-        </p>
-        <form method="post" th:action="@{/lab3/task3}" class="row g-2 mb-3">
-            <div class="col-md-4"><input class="form-control" name="studentLogin" placeholder="Логин студента *" required></div>
-            <div class="col-md-5"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
-            <div class="col-md-3"><button class="btn btn-danger w-100">Удалить протоколы</button></div>
-        </form>
-
-        <div class="row">
-            <div class="col-md-6" th:if="${beforeResults}">
-                <div class="panel-before">
-                    <strong>📋 Снимок ДО</strong>
-                    <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
-                </div>
+        <div class="task-card">
+            <h4>Задание 3. Удалить все протоколы студента по конкретному тесту</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> удаляет из таблицы <code>test_protocols</code> все
+                записи указанного студента по указанному тесту.</p>
+                <p><strong>Аналог из учебника:</strong> «Удалить поставки заданного товара
+                от заданного поставщика».</p>
+                <p><strong>Что вызывается:</strong> процедура
+                <code>sp_lab3_delete_protocols(p_student_login, p_test_code)</code>.</p>
             </div>
-            <div class="col-md-6">
-                <div class="panel-after">
-                    <strong>✅ Снимок ПОСЛЕ</strong>
-                    <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+
+            <div class="form-section">
+                <h6>Параметры</h6>
+                <form method="post" th:action="@{/lab3/task3}" class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted">Логин студента *</label>
+                        <input class="form-control" name="studentLogin" list="dl-student-logins"
+                               placeholder="напр. student" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted">Шифр теста *</label>
+                        <input class="form-control" name="testCode" list="dl-test-codes"
+                               placeholder="напр. BDI" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-danger w-100">Удалить</button>
+                    </div>
+                </form>
+                <div class="hint">Подсказки появляются при клике на поле — список существующих логинов и шифров.</div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6" th:if="${beforeResults}">
+                    <div class="panel-before">
+                        <h6>📋 Протоколы ДО</h6>
+                        <div th:replace="~{lab3/index :: resultsTable(rows=${beforeResults})}"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel-after">
+                        <h6>✅ Протоколы ПОСЛЕ</h6>
+                        <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -140,33 +250,53 @@
 
     <!-- ============== Вкладка 4 ============== -->
     <div th:if="${tab=='4'}">
-        <h4>4. <code>fn_lab3_delete_test(p_test_code)</code> · возвращает код 0/1/2</h4>
-        <ul class="text-muted small">
-            <li><span class="badge badge-code-0">0</span> — удаление прошло успешно;</li>
-            <li><span class="badge badge-code-1">1</span> — удаление невозможно: есть связанные записи (протоколы тестирования);</li>
-            <li><span class="badge badge-code-2">2</span> — теста с таким шифром нет.</li>
-        </ul>
-        <form method="post" th:action="@{/lab3/task4}" class="row g-2 mb-3">
-            <div class="col-md-8"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
-            <div class="col-md-4"><button class="btn btn-danger w-100">Вызвать функцию</button></div>
-        </form>
-
-        <div th:if="${returnCode != null}" class="alert alert-info">
-            Код возврата:
-            <span class="badge"
-                  th:classappend="${returnCode == 0} ? ' badge-code-0' : (${returnCode == 1} ? ' badge-code-1' : ' badge-code-2')"
-                  th:text="${returnCode}">0</span>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6" th:if="${beforeTests}">
-                <div class="panel-before"><strong>📋 ДО</strong>
-                    <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
-                </div>
+        <div class="task-card">
+            <h4>Задание 4. Удалить тест с возвратом кода ошибки</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> пытается удалить тест по шифру.
+                Возвращает целое число — код результата (вместо бросания исключения):</p>
+                <ul>
+                    <li><span class="badge badge-code-0">0</span>&nbsp; тест успешно удалён;</li>
+                    <li><span class="badge badge-code-1">1</span>&nbsp; нельзя удалить — есть зависимые протоколы;</li>
+                    <li><span class="badge badge-code-2">2</span>&nbsp; теста с таким шифром нет.</li>
+                </ul>
+                <p><strong>Что вызывается:</strong> функция <code>fn_lab3_delete_test(p_test_code)</code>
+                через <code>SELECT fn_lab3_delete_test(?)</code>.</p>
             </div>
-            <div class="col-md-6">
-                <div class="panel-after"><strong>✅ ПОСЛЕ</strong>
-                    <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+
+            <div class="form-section">
+                <h6>Параметр</h6>
+                <form method="post" th:action="@{/lab3/task4}" class="row g-2 align-items-end">
+                    <div class="col-md-9">
+                        <label class="form-label small text-muted">Шифр теста *</label>
+                        <input class="form-control" name="testCode" list="dl-test-codes"
+                               placeholder="напр. BDI" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-danger w-100">Вызвать функцию</button>
+                    </div>
+                </form>
+            </div>
+
+            <div th:if="${returnCode != null}" class="alert alert-info">
+                Код возврата:
+                <span class="badge"
+                      th:classappend="${returnCode == 0} ? ' badge-code-0' : (${returnCode == 1} ? ' badge-code-1' : ' badge-code-2')"
+                      th:text="${returnCode}">0</span>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6" th:if="${beforeTests}">
+                    <div class="panel-before">
+                        <h6>📋 Тесты ДО</h6>
+                        <div th:replace="~{lab3/index :: testsTable(rows=${beforeTests})}"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel-after">
+                        <h6>✅ Тесты ПОСЛЕ</h6>
+                        <div th:replace="~{lab3/index :: testsTable(rows=${tests})}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,62 +304,112 @@
 
     <!-- ============== Вкладка 5 ============== -->
     <div th:if="${tab=='5'}">
-        <h4>5. <code>sp_lab3_test_total(p_test_code, OUT p_total)</code></h4>
-        <p class="text-muted small">
-            Возвращает суммарное количество прохождений заданного теста
-            (аналог «суммарного объёма поставок» через OUT-параметр).
-        </p>
-        <form method="post" th:action="@{/lab3/task5}" class="row g-2 mb-3">
-            <div class="col-md-8"><input class="form-control" name="testCode" placeholder="Шифр теста (PSS-10) *" required></div>
-            <div class="col-md-4"><button class="btn btn-primary w-100">Вызвать процедуру</button></div>
-        </form>
+        <div class="task-card">
+            <h4>Задание 5. Сколько раз был пройден тест</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> возвращает количество прохождений указанного теста
+                через <code>OUT</code>-параметр (а не через <code>SELECT</code>).</p>
+                <p><strong>Аналог из учебника:</strong> «Суммарный объём поставок товара».</p>
+                <p><strong>Что вызывается:</strong> процедура
+                <code>sp_lab3_test_total(p_test_code, OUT p_total)</code>
+                через <code>CallableStatement</code> с <code>registerOutParameter</code>.</p>
+            </div>
 
-        <div th:if="${totalCount != null}" class="alert alert-success">
-            Суммарное количество прохождений: <strong th:text="${totalCount}">0</strong>
-        </div>
+            <div class="form-section">
+                <h6>Параметр</h6>
+                <form method="post" th:action="@{/lab3/task5}" class="row g-2 align-items-end">
+                    <div class="col-md-9">
+                        <label class="form-label small text-muted">Шифр теста *</label>
+                        <input class="form-control" name="testCode" list="dl-test-codes"
+                               placeholder="напр. BDI" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-brand w-100">Вызвать процедуру</button>
+                    </div>
+                </form>
+            </div>
 
-        <div class="panel-after">
-            <strong>📋 Текущее содержимое <code>test_protocols</code></strong>
-            <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+            <div th:if="${totalCount != null}" class="alert alert-success">
+                Суммарное количество прохождений: <strong th:text="${totalCount}">0</strong>
+            </div>
+
+            <div class="panel-after">
+                <h6>📋 Текущее содержимое таблицы «Протоколы»</h6>
+                <div th:replace="~{lab3/index :: resultsTable(rows=${results})}"></div>
+            </div>
         </div>
     </div>
 
     <!-- ============== Вкладка 6 ============== -->
     <div th:if="${tab=='6'}">
-        <h4>6. CRUD по таблице психологов · <code>SqlDataAdapter</code> → <code>JdbcTemplate</code></h4>
-        <p class="text-muted small">
-            Просмотр / добавление / изменение / удаление записей таблицы
-            <code>psychologists</code>. Изменение выполняется через ХП
-            <code>sp_lab3_psychologist_update</code>.
-        </p>
+        <div class="task-card">
+            <h4>Задание 6. CRUD по таблице психологов</h4>
+            <div class="task-desc">
+                <p><strong>Что делает:</strong> просмотр / добавление / изменение / удаление записей
+                в таблице <code>psychologists</code> прямо в табличном виде —
+                аналог <code>SqlDataAdapter</code> + DataGridView в C#.</p>
+                <p><strong>Что вызывается:</strong></p>
+                <ul>
+                    <li>добавление — обычный <code>INSERT</code> через <code>JdbcTemplate</code>
+                        (создаётся учётная запись + запись психолога);</li>
+                    <li>изменение — процедура
+                        <code>sp_lab3_psychologist_update(...)</code>;</li>
+                    <li>удаление — <code>DELETE</code> по табельному номеру.</li>
+                </ul>
+            </div>
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <h6>Добавить психолога</h6>
+            <div class="form-section">
+                <h6>➕ Добавить психолога</h6>
                 <form method="post" th:action="@{/lab3/task6/insert}" class="row g-2">
-                    <div class="col-md-3"><input type="number" class="form-control" name="personnelNumber" placeholder="Табельный № (PK) *" required></div>
-                    <div class="col-md-3"><input class="form-control" name="lastName" placeholder="Фамилия *" required></div>
-                    <div class="col-md-3"><input class="form-control" name="firstName" placeholder="Имя *" required></div>
-                    <div class="col-md-3"><input class="form-control" name="middleName" placeholder="Отчество"></div>
-                    <div class="col-md-3"><input class="form-control" name="position" placeholder="Должность"></div>
-                    <div class="col-md-3"><input class="form-control" name="email" placeholder="Email"></div>
-                    <div class="col-md-3"><input class="form-control" name="phone" placeholder="Телефон"></div>
-                    <div class="col-md-3"><button class="btn btn-success w-100">+ Добавить</button></div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Табельный № (PK) *</label>
+                        <input type="number" class="form-control" name="personnelNumber"
+                               placeholder="напр. 100050" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Фамилия *</label>
+                        <input class="form-control" name="lastName" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Имя *</label>
+                        <input class="form-control" name="firstName" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Отчество</label>
+                        <input class="form-control" name="middleName">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Должность</label>
+                        <input class="form-control" name="position" placeholder="Психолог">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Email</label>
+                        <input class="form-control" name="email" type="email" placeholder="user@mentalhealth.ru">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Телефон</label>
+                        <input class="form-control" name="phone" placeholder="+7900...">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-brand w-100">+ Добавить</button>
+                    </div>
                 </form>
+                <div class="hint">При добавлении создаётся учётная запись с логином
+                    <code>psy_&lt;табельный №&gt;</code> и паролем <code>psychologist123</code>.</div>
             </div>
-        </div>
 
-        <div class="row">
-            <div class="col-lg-6" th:if="${beforePsy}">
-                <div class="panel-before">
-                    <strong>📋 ДО</strong>
-                    <div th:replace="~{lab3/index :: psychologistsTable(rows=${beforePsy}, editable=false)}"></div>
+            <div class="row g-3">
+                <div class="col-lg-6" th:if="${beforePsy}">
+                    <div class="panel-before">
+                        <h6>📋 ДО изменения</h6>
+                        <div th:replace="~{lab3/index :: psychologistsTable(rows=${beforePsy}, editable=false)}"></div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="panel-after">
-                    <strong>✅ Текущее содержимое (ПОСЛЕ)</strong>
-                    <div th:replace="~{lab3/index :: psychologistsTable(rows=${psychologists}, editable=true)}"></div>
+                <div class="col-lg-6">
+                    <div class="panel-after">
+                        <h6>✅ Текущее содержимое (можно редактировать прямо здесь)</h6>
+                        <div th:replace="~{lab3/index :: psychologistsTable(rows=${psychologists}, editable=true)}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -241,14 +421,17 @@
 <div th:fragment="resultsTable(rows)" class="table-responsive mt-2">
     <table class="table table-sm dgv">
         <thead>
-            <tr><th>id</th><th>студент</th><th>тест</th><th>балл</th><th>дата</th><th>уровень</th></tr>
+            <tr>
+                <th>№ протокола</th><th>Студент (логин)</th><th>Тест</th>
+                <th>Балл</th><th>Дата</th><th>Уровень стресса</th>
+            </tr>
         </thead>
         <tbody>
             <tr th:each="r : ${rows}">
                 <td th:text="${r['result_id']}"></td>
                 <td th:text="${r['student_login']}"></td>
                 <td th:text="${r['test_name']}"></td>
-                <td th:text="${r['total_score']}"></td>
+                <td><strong th:text="${r['total_score']}"></strong></td>
                 <td th:text="${r['date_taken']}"></td>
                 <td th:text="${r['stress_level']}"></td>
             </tr>
@@ -260,14 +443,17 @@
 <div th:fragment="testsTable(rows)" class="table-responsive mt-2">
     <table class="table table-sm dgv">
         <thead>
-            <tr><th>id</th><th>name</th><th>description</th><th>active</th></tr>
+            <tr><th>Шифр (PK)</th><th>Название</th><th>Описание</th><th>Активен</th></tr>
         </thead>
         <tbody>
             <tr th:each="r : ${rows}">
-                <td th:text="${r['test_id']}"></td>
+                <td><span class="badge bg-dark" th:text="${r['test_id']}"></span></td>
                 <td th:text="${r['name']}"></td>
                 <td th:text="${r['description']}"></td>
-                <td th:text="${r['is_active']}"></td>
+                <td>
+                    <span class="badge bg-success" th:if="${r['is_active']}">да</span>
+                    <span class="badge bg-secondary" th:unless="${r['is_active']}">нет</span>
+                </td>
             </tr>
             <tr th:if="${#lists.isEmpty(rows)}"><td colspan="4" class="text-muted text-center">— пусто —</td></tr>
         </tbody>
@@ -275,7 +461,6 @@
 </div>
 
 <div th:fragment="psychologistsTable(rows, editable)" class="mt-2">
-    <!-- HTML5 form attribute позволяет привязать input/button к <form> вне <tr> -->
     <th:block th:if="${editable}">
         <form th:each="r : ${rows}" th:id="'upd-' + ${r['id']}"
               method="post" th:action="@{/lab3/task6/update}" class="d-none">

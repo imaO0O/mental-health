@@ -2,6 +2,7 @@ package ru.rrtu.mental_health_system.controller;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +44,11 @@ public class Lab3Controller {
         model.addAttribute("results", fetchResults());
         model.addAttribute("tests", fetchTests());
         model.addAttribute("psychologists", fetchPsychologists());
+
+        // Списки для datalist-подсказок: чтобы пользователь не вводил
+        // коды тестов и логины студентов наугад.
+        model.addAttribute("testCodes", fetchTestCodes());
+        model.addAttribute("studentLogins", fetchStudentLogins());
         return "lab3/index";
     }
 
@@ -118,19 +124,28 @@ public class Lab3Controller {
     }
 
     // ───────── ЛР3/5: суммарное количество прохождений теста ─────────
+    // Процедура возвращает -1, если теста с заданным шифром нет в БД.
+    // Используем прямой "CALL ...": JDBC-escape "{call ...}" в pgjdbc
+    // транслируется в "SELECT * FROM ...", что для PROCEDURE недопустимо.
     @PostMapping("/task5")
     public String task5(@RequestParam String testCode, RedirectAttributes ra) {
         try {
             Long total = jdbc.execute((java.sql.Connection con) -> {
-                CallableStatement cs = con.prepareCall("{call sp_lab3_test_total(?, ?)}");
-                cs.setString(1, testCode);
-                cs.registerOutParameter(2, Types.BIGINT);
-                cs.execute();
-                return cs.getLong(2);
+                try (CallableStatement cs = con.prepareCall("CALL sp_lab3_test_total(?, ?)")) {
+                    cs.setString(1, testCode);
+                    cs.registerOutParameter(2, Types.BIGINT);
+                    cs.execute();
+                    return cs.getLong(2);
+                }
             });
-            ra.addFlashAttribute("msg",
-                    "По тесту «" + testCode + "» зафиксировано прохождений: " + total);
-            ra.addFlashAttribute("totalCount", total);
+            if (total != null && total < 0) {
+                ra.addFlashAttribute("err",
+                        "Тест с шифром «" + testCode + "» не найден в БД.");
+            } else {
+                ra.addFlashAttribute("msg",
+                        "По тесту «" + testCode + "» зафиксировано прохождений: " + total);
+                ra.addFlashAttribute("totalCount", total);
+            }
         } catch (DataAccessException e) {
             ra.addFlashAttribute("err", "Ошибка: " + e.getMostSpecificCause().getMessage());
         }
@@ -149,19 +164,32 @@ public class Lab3Controller {
                               RedirectAttributes ra) {
         ra.addFlashAttribute("beforePsy", fetchPsychologists());
         try {
-            // Сначала создаём учётную запись (PK = login), затем психолога с FK login.
-            String login = "psy_" + (System.currentTimeMillis() % 100000000L);
+            // Проверка дублей до вставки — даём пользователю понятную ошибку
+            // вместо «duplicate key value violates unique constraint».
+            Integer exists = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM psychologists WHERE personnel_number = ?",
+                    Integer.class, personnelNumber);
+            if (exists != null && exists > 0) {
+                ra.addFlashAttribute("err",
+                        "Психолог с табельным № " + personnelNumber + " уже существует.");
+                return "redirect:/lab3?tab=6";
+            }
+            // Создаём учётную запись (PK = login), затем психолога с FK login.
+            // Пароль кодируем через BCrypt — иначе вход в систему не сработает.
+            String login = "psy_" + personnelNumber;
+            String passwordHash = new BCryptPasswordEncoder().encode("psychologist123");
             jdbc.update("""
                 INSERT INTO users(login, password_hash, role_name)
                 VALUES (?, ?, 'PSYCHOLOGIST')
-                """, login, "{noop}stub");
+                """, login, passwordHash);
             jdbc.update("""
                 INSERT INTO psychologists(personnel_number, login, last_name, first_name, middle_name,
                                           position, email, phone)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, personnelNumber, login, lastName, firstName, middleName, position, email, phone);
             ra.addFlashAttribute("msg",
-                    "Психолог добавлен (таб. №=" + personnelNumber + ", login=" + login + ").");
+                    "Психолог добавлен: табельный № " + personnelNumber
+                  + ", логин «" + login + "», пароль psychologist123.");
         } catch (DataAccessException e) {
             ra.addFlashAttribute("err", "Ошибка: " + e.getMostSpecificCause().getMessage());
         }
@@ -246,5 +274,14 @@ public class Lab3Controller {
                    position, personnel_number, email, phone
               FROM psychologists ORDER BY personnel_number
             """);
+    }
+
+    private List<String> fetchTestCodes() {
+        return jdbc.queryForList("SELECT test_code FROM tests ORDER BY test_code", String.class);
+    }
+
+    private List<String> fetchStudentLogins() {
+        return jdbc.queryForList(
+                "SELECT login FROM students ORDER BY login", String.class);
     }
 }

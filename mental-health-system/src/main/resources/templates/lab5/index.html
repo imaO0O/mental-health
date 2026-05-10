@@ -57,13 +57,16 @@
         <h6 class="text-muted">Текущее содержимое таблицы <code>tests</code>:</h6>
         <div class="table-responsive">
             <table class="table table-sm dgv">
-                <thead><tr><th>id</th><th>Название</th><th>Описание</th><th>Активен</th></tr></thead>
+                <thead><tr><th>Шифр (PK)</th><th>Название</th><th>Описание</th><th>Активен</th></tr></thead>
                 <tbody>
                     <tr th:each="t : ${tests}">
-                        <td th:text="${t.id}"></td>
+                        <td><span class="badge bg-dark" th:text="${t.testCode}"></span></td>
                         <td th:text="${t.name}"></td>
                         <td th:text="${t.description}"></td>
-                        <td th:text="${t.isActive}"></td>
+                        <td>
+                            <span class="badge bg-success" th:if="${t.isActive}">да</span>
+                            <span class="badge bg-secondary" th:unless="${t.isActive}">нет</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -106,8 +109,8 @@
             <div class="col-md-9">
                 <select class="form-select" name="testId" required>
                     <option value="">— выберите тест —</option>
-                    <option th:each="t : ${tests}" th:value="${t.id}"
-                            th:text="${t.id + ' — ' + t.name}"></option>
+                    <option th:each="t : ${tests}" th:value="${t.testCode}"
+                            th:text="${t.testCode + ' — ' + t.name}"></option>
                 </select>
             </div>
             <div class="col-md-3"><button class="btn btn-danger w-100">Удалить</button></div>
@@ -116,12 +119,15 @@
         <h6 class="text-muted">Текущее содержимое <code>tests</code>:</h6>
         <div class="table-responsive">
             <table class="table table-sm dgv">
-                <thead><tr><th>id</th><th>Название</th><th>Активен</th></tr></thead>
+                <thead><tr><th>Шифр (PK)</th><th>Название</th><th>Активен</th></tr></thead>
                 <tbody>
                     <tr th:each="t : ${tests}">
-                        <td th:text="${t.id}"></td>
+                        <td><span class="badge bg-dark" th:text="${t.testCode}"></span></td>
                         <td th:text="${t.name}"></td>
-                        <td th:text="${t.isActive}"></td>
+                        <td>
+                            <span class="badge bg-success" th:if="${t.isActive}">да</span>
+                            <span class="badge bg-secondary" th:unless="${t.isActive}">нет</span>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -170,7 +176,7 @@
             <table class="table table-sm dgv">
                 <thead>
                     <tr>
-                        <th>id</th>
+                        <th>№ протокола</th>
                         <th>Студент</th>
                         <th>№ зачётной книжки</th>
                         <th>Тест</th>
@@ -183,7 +189,7 @@
                 </thead>
                 <tbody>
                     <tr th:each="r : ${resultRows}">
-                        <td th:text="${r.id}"></td>
+                        <td><span class="badge bg-dark" th:text="${r.id}"></span></td>
                         <td th:text="${r.studentName}"></td>
                         <td><span class="badge bg-dark" th:text="${r.recordBookNumber} ?: '—'"></span></td>
                         <td th:text="${r.testName}"></td>
@@ -206,11 +212,11 @@
 <div th:fragment="resultsTable(rows)" class="table-responsive">
     <table class="table table-sm dgv">
         <thead>
-            <tr><th>id</th><th>Студент</th><th>Тест</th><th>Балл</th><th>Уровень</th><th>Дата</th></tr>
+            <tr><th>№ протокола</th><th>Студент</th><th>Тест</th><th>Балл</th><th>Уровень</th><th>Дата</th></tr>
         </thead>
         <tbody>
             <tr th:each="r : ${rows}">
-                <td th:text="${r.id}"></td>
+                <td><span class="badge bg-dark" th:text="${r.id}"></span></td>
                 <td th:text="${r.student != null ? r.student.fullName : '—'}"></td>
                 <td th:text="${r.test != null ? r.test.name : '—'}"></td>
                 <td th:text="${r.totalScore}"></td>

@@ -156,7 +156,7 @@ public class DbProceduresInitializer {
                 END IF;
                 v_level_name := fn_get_stress_level(v_percent);
                 IF v_level_name IS NULL THEN
-                    RAISE EXCEPTION 'Не удалось определить уровень стресса для %% процентов', v_percent;
+                    RAISE EXCEPTION 'Не удалось определить уровень стресса для % процентов', v_percent;
                 END IF;
                 INSERT INTO test_protocols(record_book_number, test_code, taken_at,
                                            total_score, level_name, status_name)
@@ -265,6 +265,9 @@ public class DbProceduresInitializer {
             """);
 
         // ЛР3 / 5. Вернуть суммарное количество прохождений заданного теста.
+        // Возвращает -1, если тест с таким шифром не существует (отличаем
+        // «теста нет» от «есть, но 0 прохождений» — иначе пользователю было бы
+        // непонятно, почему вернулся 0).
         execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_test_total(VARCHAR)");
         exec("""
             CREATE OR REPLACE PROCEDURE sp_lab3_test_total(
@@ -272,6 +275,10 @@ public class DbProceduresInitializer {
                 OUT p_total BIGINT)
             LANGUAGE plpgsql AS $$
             BEGIN
+                IF NOT EXISTS (SELECT 1 FROM tests WHERE test_code = p_test_code) THEN
+                    p_total := -1;
+                    RETURN;
+                END IF;
                 SELECT COUNT(*) INTO p_total
                   FROM test_protocols
                  WHERE test_code = p_test_code;

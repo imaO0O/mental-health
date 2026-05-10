@@ -5,3 +5,5 @@
 --     статусы прохождения) — в DataInitializer.java;
 --   * демо-данные (психологи, студенты, тесты с вопросами и ответами,
 --     рекомендации) — в DataInitializer.java.
+-- No-op: Spring Boot ScriptUtils не допускает полностью пустой скрипт.
+SELECT 1;

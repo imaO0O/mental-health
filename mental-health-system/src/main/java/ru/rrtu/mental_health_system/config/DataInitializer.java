@@ -32,6 +32,7 @@ public class DataInitializer {
     private final AnswerRepository answerRepository;
     private final RecommendationRepository recommendationRepository;
     private final PsychologistSpecializationRepository psychologistSpecializationRepository;
+    private final TestResultRepository testResultRepository;
 
     public DataInitializer(RoleRepository roleRepository,
                            UserRepository userRepository,
@@ -44,7 +45,8 @@ public class DataInitializer {
                            QuestionRepository questionRepository,
                            AnswerRepository answerRepository,
                            RecommendationRepository recommendationRepository,
-                           PsychologistSpecializationRepository psychologistSpecializationRepository) {
+                           PsychologistSpecializationRepository psychologistSpecializationRepository,
+                           TestResultRepository testResultRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
@@ -57,6 +59,7 @@ public class DataInitializer {
         this.answerRepository = answerRepository;
         this.recommendationRepository = recommendationRepository;
         this.psychologistSpecializationRepository = psychologistSpecializationRepository;
+        this.testResultRepository = testResultRepository;
     }
 
     @PostConstruct
@@ -91,6 +94,9 @@ public class DataInitializer {
         upsertUser("admin", "admin123", roleAdmin, enc);
 
         // === Психологи ===
+        Psychologist psy0 = upsertPsychologist("psychologist", "psychologist123", rolePsy,
+                100000L, "Петрова", "Анна", "Сергеевна", "Ведущий психолог",
+                "petrova@mentalhealth.ru", "+79002223300", enc);
         Psychologist psy1 = upsertPsychologist("psychologist1", "psychologist123", rolePsy,
                 100001L, "Соколова", "Елена", "Викторовна", "Клинический психолог",
                 "sokolova@mentalhealth.ru", "+79002223344", enc);
@@ -99,22 +105,24 @@ public class DataInitializer {
                 "lebedev@mentalhealth.ru", "+79002223355", enc);
 
         // Специализации психологов
+        upsertSpec(psy0, cStress);
+        upsertSpec(psy0, cBurn);
         upsertSpec(psy1, cStress);
         upsertSpec(psy1, cAnxiety);
         upsertSpec(psy2, cDepr);
         upsertSpec(psy2, cBurn);
 
         // === Студенты ===
-        upsertStudent("student", "student123", roleStudent,
+        Student stu0 = upsertStudent("student", "student123", roleStudent,
                 202400000001L, "Тестовый", "Студент", "Студентович", "ИВТ-40",
                 "student@test.ru", "+79000000000", enc);
-        upsertStudent("student1", "student123", roleStudent,
+        Student stu1 = upsertStudent("student1", "student123", roleStudent,
                 202400000002L, "Иванов", "Иван", "Сергеевич", "ИВТ-41",
                 "ivanov@student.ru", "+79001112233", enc);
-        upsertStudent("student2", "student123", roleStudent,
+        Student stu2 = upsertStudent("student2", "student123", roleStudent,
                 202400000003L, "Петров", "Пётр", "Александрович", "ИВТ-41",
                 "petrov@student.ru", "+79001112244", enc);
-        upsertStudent("student3", "student123", roleStudent,
+        Student stu3 = upsertStudent("student3", "student123", roleStudent,
                 202400000004L, "Сидоров", "Александр", "Иванович", "ИВТ-42",
                 "sidorov@student.ru", "+79001112255", enc);
         upsertStudent("student4", "student123", roleStudent,
@@ -160,7 +168,31 @@ public class DataInitializer {
         upsertRecommendation(sHigh, "У вас высокий уровень стресса. Рекомендуется обратиться к психологу для консультации и освоения техник управления стрессом.", (short) 3, psy2);
         upsertRecommendation(sCrit, "У вас критический уровень стресса. Настоятельно рекомендуется немедленная консультация специалиста-психотерапевта.", (short) 4, psy2);
 
+        // === Демо-протоколы тестирования (для лабораторной №3) ===
+        // Чтобы вкладки 1, 3, 5 имели данные для демонстрации эффекта процедур.
+        upsertProtocol(stu0, bdi, (short) 8,  sMid);
+        upsertProtocol(stu0, bdi, (short) 4,  sLow);
+        upsertProtocol(stu1, bdi, (short) 11, sHigh);
+        upsertProtocol(stu2, bdi, (short) 6,  sMid);
+        upsertProtocol(stu3, bdi, (short) 12, sCrit);
+
         log.info("DataInitializer: засев завершён.");
+    }
+
+    private TestResult upsertProtocol(Student student, Test test, Short totalScore, StressLevel level) {
+        // Идемпотентно: если у студента уже есть протокол по этому тесту — не дублируем.
+        return testResultRepository.findByStudentId(student.getRecordBookNumber()).stream()
+                .filter(r -> r.getTest() != null
+                        && test.getTestCode().equals(r.getTest().getTestCode()))
+                .findFirst()
+                .orElseGet(() -> {
+                    TestResult r = new TestResult();
+                    r.setStudent(student);
+                    r.setTest(test);
+                    r.setTotalScore(totalScore);
+                    r.setStressLevel(level);
+                    return testResultRepository.save(r);
+                });
     }
 
     // ==================================================================
