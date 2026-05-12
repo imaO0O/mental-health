@@ -308,29 +308,53 @@
             <h4>Задание 5. Сколько раз был пройден тест</h4>
             <div class="task-desc">
                 <p><strong>Что делает:</strong> возвращает количество прохождений указанного теста
-                через <code>OUT</code>-параметр (а не через <code>SELECT</code>).</p>
-                <p><strong>Аналог из учебника:</strong> «Суммарный объём поставок товара».</p>
+                через <code>OUT</code>-параметр (а не через <code>SELECT</code>).
+                Если <em>Логин студента</em> оставить пустым — считает по всем студентам;
+                если ввести логин — фильтрует протоколы только этого студента.</p>
+                <p><strong>Аналог из учебника:</strong> «Суммарный объём поставок товара»
+                (опционально — поставок конкретного поставщика).</p>
                 <p><strong>Что вызывается:</strong> процедура
-                <code>sp_lab3_test_total(p_test_code, OUT p_total)</code>
-                через <code>CallableStatement</code> с <code>registerOutParameter</code>.</p>
+                <code>sp_lab3_test_total(p_test_code, p_student_login, OUT p_total)</code>
+                через <code>CallableStatement</code> с <code>registerOutParameter</code>.
+                Коды возврата: <code>-1</code> — теста нет, <code>-2</code> — студента нет,
+                <code>≥&nbsp;0</code> — количество прохождений.</p>
             </div>
 
             <div class="form-section">
-                <h6>Параметр</h6>
+                <h6>Параметры</h6>
                 <form method="post" th:action="@{/lab3/task5}" class="row g-2 align-items-end">
-                    <div class="col-md-9">
-                        <label class="form-label small text-muted">Шифр теста *</label>
-                        <input class="form-control" name="testCode" list="dl-test-codes"
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Шифр теста <span class="text-danger">*</span></label>
+                        <input class="form-control" name="testCode" list="dl-test-codes-5"
                                placeholder="напр. BDI" required>
+                        <datalist id="dl-test-codes-5">
+                            <option th:each="c : ${testCodes}" th:value="${c}"></option>
+                        </datalist>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">
+                            Логин студента <span class="text-muted">(необязательно)</span>
+                        </label>
+                        <input class="form-control" name="studentLogin" list="dl-student-logins-5"
+                               placeholder="пусто = все студенты">
+                        <datalist id="dl-student-logins-5">
+                            <option th:each="s : ${studentLogins}" th:value="${s}"></option>
+                        </datalist>
+                    </div>
+                    <div class="col-md-4">
                         <button class="btn btn-brand w-100">Вызвать процедуру</button>
                     </div>
                 </form>
+                <div class="hint">
+                    Пустой логин → подсчёт по всем студентам.
+                    Логин из списка → только этот студент по данному тесту.
+                </div>
             </div>
 
             <div th:if="${totalCount != null}" class="alert alert-success">
-                Суммарное количество прохождений: <strong th:text="${totalCount}">0</strong>
+                Количество прохождений
+                (<span th:text="${scopeLabel}">все студенты</span>):
+                <strong th:text="${totalCount}">0</strong>
             </div>
 
             <div class="panel-after">

@@ -60,22 +60,27 @@ public class Lab5Controller {
     }
 
     // ───────── ЛР5/1: добавить новый тест (без SQL — через JpaRepository.save) ─────────
+    // Для чекбокса "isActive" используем defaultValue="false": если галка
+    // снята, браузер вообще не отправляет параметр — Spring подставит false.
     @PostMapping("/task1")
     public String task1(@RequestParam String testCode,
                         @RequestParam String name,
                         @RequestParam(required = false) String description,
                         @RequestParam(required = false) String instructions,
+                        @RequestParam(defaultValue = "false") boolean isActive,
                         RedirectAttributes ra) {
         Test t = new Test();
         t.setTestCode(testCode);
         t.setName(name);
         t.setDescription(description);
         t.setInstructions(instructions);
-        t.setIsActive(true);
+        t.setIsActive(isActive);
         try {
             testRepository.save(t);
             ra.addFlashAttribute("msg",
-                    "Тест «" + name + "» (шифр " + testCode + ") добавлен через testRepository.save() (без SQL).");
+                    "Тест «" + name + "» (шифр " + testCode + ", "
+                  + (isActive ? "активен" : "неактивен")
+                  + ") добавлен через testRepository.save() (без SQL).");
         } catch (DataAccessException e) {
             ra.addFlashAttribute("err", "Ошибка: " + e.getMostSpecificCause().getMessage());
         }
@@ -86,9 +91,18 @@ public class Lab5Controller {
     // Аналог "сезонных скидок": в зависимости от значения total_score применяется
     // разный коэффициент снижения. Все изменения — через навигацию по сущностям
     // и save(); нативного SQL UPDATE нет.
+    //
+    // Перед изменением фиксируем "снимок ДО" во flash-атрибуте, чтобы шаблон
+    // показал две таблицы рядом — преподавателю наглядно виден эффект.
+    //
+    // Для размера снижения используем Math.ceil: при любом ненулевом балле
+    // и k<1 гарантированно получаем уменьшение хотя бы на 1, иначе мелкие
+    // значения (4*0.9=3.6) при обычном округлении возвращались бы к себе же.
     @PostMapping("/task2")
     @Transactional
     public String task2(RedirectAttributes ra) {
+        ra.addFlashAttribute("beforeResults", snapshotResults());
+
         List<TestResult> all = testResultRepository.findAll();
         int changed = 0;
         for (TestResult r : all) {
@@ -98,7 +112,8 @@ public class Lab5Controller {
             if (s < 10) k = 0.90;            // -10%
             else if (s <= 20) k = 0.80;      // -20%
             else k = 0.70;                   // -30%
-            int newScore = (int) Math.round(s * k);
+            int reduction = (int) Math.ceil(s * (1.0 - k));
+            int newScore = Math.max(0, s - reduction);
             r.setTotalScore((short) newScore);
             // Пересчитываем уровень стресса навигационно
             recalcStressLevel(r);
@@ -106,9 +121,31 @@ public class Lab5Controller {
             changed++;
         }
         ra.addFlashAttribute("msg",
-                "Применена ступенчатая корректировка к " + changed + " результатам "
+                "Применена ступенчатая корректировка к " + changed + " протоколам "
               + "(ставки: <10 → -10%; 10..20 → -20%; >20 → -30%).");
         return "redirect:/lab5?tab=2";
+    }
+
+    /**
+     * Снимок протоколов в формате простых Map — нужен, чтобы во flash-атрибуте
+     * жили примитивные значения, а не отсоединённые JPA-сущности, у которых
+     * после редиректа отвалится lazy-инициализация связей.
+     */
+    private List<Map<String, Object>> snapshotResults() {
+        List<Map<String, Object>> snap = new ArrayList<>();
+        for (TestResult r : testResultRepository.findAll()) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", r.getId());
+            m.put("studentName",
+                    r.getStudent() == null ? "—" : r.getStudent().getFullName());
+            m.put("testName", r.getTest() == null ? "—" : r.getTest().getName());
+            m.put("totalScore", r.getTotalScore());
+            m.put("stressLevel",
+                    r.getStressLevel() == null ? "—" : r.getStressLevel().getName());
+            m.put("dateTaken", r.getDateTaken());
+            snap.add(m);
+        }
+        return snap;
     }
 
     // ───────── ЛР5/3: удалить заданный тест (по шифру) — через repository.delete ─────────
@@ -136,20 +173,39 @@ public class Lab5Controller {
     // ───────── ЛР5/4: цикл, пока среднее >= порога ─────────
     // Уменьшаем total_score у всех результатов на 10% в цикле, пока среднее
     // не станет меньше заданного порога. Все операции через JPA, без SQL.
+    //
+    // Используем Math.ceil для размера снижения — гарантия, что при любом
+    // положительном балле каждая итерация даёт уменьшение хотя бы на 1
+    // (иначе мелкие баллы вроде 4 (× 0.9 = 3.6) при обычном округлении
+    // возвращались бы к себе же, и цикл крутил бы вхолостую).
     @PostMapping("/task4")
     @Transactional
     public String task4(@RequestParam(defaultValue = "5") double threshold,
                         @RequestParam(defaultValue = "50") int maxIters,
                         RedirectAttributes ra) {
+        ra.addFlashAttribute("beforeResults", snapshotResults());
+
         int iter = 0;
         double avg = currentAverage();
         double startAvg = avg;
+
+        // Подсказка пользователю, если цикл не запустится: порог уже превышен.
+        if (avg < threshold) {
+            ra.addFlashAttribute("warn", String.format(
+                    "Цикл не запущен: среднее (%.2f) уже меньше порога (%.2f). "
+                  + "Поставьте порог МЕНЬШЕ текущего среднего, чтобы увидеть итерации.",
+                    avg, threshold));
+            return "redirect:/lab5?tab=4";
+        }
+
         while (avg >= threshold && iter < maxIters) {
             List<TestResult> all = testResultRepository.findAll();
             if (all.isEmpty()) break;
             for (TestResult r : all) {
                 if (r.getTotalScore() == null) continue;
-                int newScore = (int) Math.round(r.getTotalScore() * 0.9);
+                int s = r.getTotalScore();
+                int reduction = (int) Math.ceil(s * 0.1);   // -10%, но не меньше 1
+                int newScore = Math.max(0, s - reduction);
                 r.setTotalScore((short) newScore);
                 recalcStressLevel(r);
             }

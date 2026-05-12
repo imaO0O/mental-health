@@ -2,24 +2,44 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Динамика студента</title>
+    <title>Индивидуальная карта психоэмоционального состояния</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
-        .stat-card { border-left: 4px solid #5a4ba2; }
+        body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
+        .navbar { background-color: #5a4ba2 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .report {
+            max-width: 1000px; margin: 24px auto; background: #fff;
+            padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+        }
+        .report h1 { text-align: center; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: .5px; margin: 0 0 4px; line-height: 1.4; }
+        .report h2 { font-size: 1.1rem; font-weight: 700; margin-top: 36px;
+                     padding-bottom: 6px; border-bottom: 1px solid #999; }
+        .meta-block { margin-top: 18px; font-size: .95rem; line-height: 1.7; }
+        .meta-block .label { display: inline-block; min-width: 220px; color: #555; }
+        .report table { font-family: -apple-system, "Segoe UI", sans-serif; font-size: .9rem; }
+        .report table th { background: #f0f2f7; font-weight: 600; }
+        .chart-wrap { max-width: 100%; margin: 12px auto; }
+        .conclusion {
+            font-size: 1rem; line-height: 1.7; text-align: justify; text-indent: 28px;
+            margin-top: 12px;
+        }
+        .sign-block {
+            margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+            font-family: -apple-system, "Segoe UI", sans-serif; font-size: .92rem;
+        }
+        .sign-block .role { color: #555; margin-bottom: 4px; }
+        .sign-block .line { border-bottom: 1px solid #333; min-width: 200px; display: inline-block; }
         @media print {
             .navbar, .no-print, .btn { display: none !important; }
             body { background: #fff; }
-            .card { box-shadow: none; border: 1px solid #ccc; }
+            .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
         }
-        .bar { height: 24px; background: linear-gradient(90deg,#5a4ba2,#9d8fdc); color: #fff; padding: 0 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark no-print">
     <div class="container-fluid">
         <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
         <div class="navbar-nav ms-auto">
@@ -30,59 +50,170 @@
     </div>
 </nav>
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
-        <a th:href="@{/psychologist/student/{id}/results(id=${student.id})}" class="btn btn-outline-secondary">← К результатам</a>
-        <button class="btn btn-outline-primary" onclick="window.print()">🖨 Распечатать</button>
-    </div>
+<div class="container-fluid no-print py-2 d-flex justify-content-between" style="max-width: 1000px;">
+    <a th:href="@{/psychologist/student/{id}/results(id=${student.id})}"
+       class="btn btn-outline-secondary btn-sm">← К результатам</a>
+    <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Печать (PDF)</button>
+</div>
 
-    <h1>📈 Динамика психоэмоционального состояния</h1>
-    <h4 class="text-muted">
-        <span th:text="${student.fullName}"></span>,
-        группа <span th:text="${student.groupName}"></span>
-    </h4>
-    <p class="text-muted">Отчёт сформирован: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}"></span></p>
+<article class="report">
+    <p class="text-center" style="font-size: .9rem; margin-bottom: 2px;">
+        Информационная система «Мониторинг ментального здоровья студентов»
+    </p>
+    <h1>Индивидуальная карта<br>психоэмоционального состояния обучающегося</h1>
 
-    <div class="row mb-4">
-        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
-            <h6 class="text-muted">Тестирований</h6><h3 th:text="${#lists.size(results)}">0</h3>
-        </div></div></div>
-        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
-            <h6 class="text-muted">Средний балл</h6><h3 th:text="${avgScore}">0</h3>
-        </div></div></div>
-        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
-            <h6 class="text-muted">Минимум</h6><h3 th:text="${minScore}">0</h3>
-        </div></div></div>
-        <div class="col-md-3"><div class="card stat-card"><div class="card-body">
-            <h6 class="text-muted">Максимум</h6><h3 th:text="${maxScore}">0</h3>
-        </div></div></div>
-    </div>
+    <!-- 1. Сведения об обучающемся -->
+    <h2>1. Сведения об обучающемся</h2>
+    <table class="table table-bordered">
+        <tbody>
+            <tr><th style="width: 40%;">Фамилия, имя, отчество</th>
+                <td th:text="${student.fullName}">—</td></tr>
+            <tr><th>Номер зачётной книжки</th>
+                <td th:text="${student.recordBookNumber}">—</td></tr>
+            <tr><th>Учебная группа</th>
+                <td th:text="${student.groupName}">—</td></tr>
+            <tr><th>Контактный e-mail</th>
+                <td th:text="${student.email != null ? student.email : '—'}">—</td></tr>
+            <tr><th>Контактный телефон</th>
+                <td th:text="${student.phone != null ? student.phone : '—'}">—</td></tr>
+            <tr><th>Дата формирования карты</th>
+                <td><strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}">—</strong></td></tr>
+            <tr><th>Карту составил</th>
+                <td th:text="${user.login}">—</td></tr>
+        </tbody>
+    </table>
 
-    <div class="card">
-        <div class="card-header"><h5 class="mb-0">Хронология результатов</h5></div>
-        <div class="card-body">
-            <div th:if="${#lists.isEmpty(results)}" class="alert alert-info">У студента ещё нет пройденных тестов.</div>
-            <table class="table" th:if="${not #lists.isEmpty(results)}">
-                <thead>
-                <tr><th>Дата</th><th>Тест</th><th>Балл</th><th>Уровень</th><th style="width: 30%">График</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="r : ${results}">
-                    <td th:text="${#temporals.format(r.dateTaken, 'dd.MM.yyyy')}"></td>
-                    <td th:text="${r.test.name}"></td>
-                    <td th:text="${r.totalScore}"></td>
-                    <td th:text="${r.stressLevel != null ? r.stressLevel.name : '—'}"></td>
-                    <td>
-                        <div class="bar"
-                             th:style="'width:' + (${maxScore} > 0 ? ${r.totalScore} * 100 / ${maxScore} : 0) + '%'"
-                             th:text="${r.totalScore}"></div>
-                    </td>
+    <!-- 2. Сводные показатели -->
+    <h2>2. Сводные показатели обследований</h2>
+    <p style="text-indent: 28px;" th:if="${#lists.isEmpty(results)}">
+        В период наблюдения обучающийся не проходил психодиагностических
+        обследований в системе. Динамика не может быть построена.
+    </p>
+    <div th:unless="${#lists.isEmpty(results)}">
+        <table class="table table-bordered">
+            <caption style="caption-side: top;">Таблица 2.1 — Описательная статистика по баллам</caption>
+            <thead><tr><th style="width: 5%;">№</th><th>Показатель</th><th style="width: 25%;">Значение</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Количество проведённых тестирований</td>
+                    <td th:text="${#lists.size(results)}">0</td></tr>
+                <tr><td>2</td><td>Средний суммарный балл</td>
+                    <td th:text="${avgScore}">0</td></tr>
+                <tr><td>3</td><td>Минимальный суммарный балл</td>
+                    <td th:text="${minScore}">0</td></tr>
+                <tr><td>4</td><td>Максимальный суммарный балл</td>
+                    <td th:text="${maxScore}">0</td></tr>
+                <tr><td>5</td><td>Дата первого тестирования</td>
+                    <td th:text="${#temporals.format(results[0].takenAt, 'dd.MM.yyyy')}">—</td></tr>
+                <tr><td>6</td><td>Дата последнего тестирования</td>
+                    <td th:text="${#temporals.format(results[#lists.size(results)-1].takenAt, 'dd.MM.yyyy')}">—</td></tr>
+            </tbody>
+        </table>
+
+        <!-- 3. Динамика по дате -->
+        <h2>3. Динамика суммарного балла</h2>
+        <p style="text-indent: 28px;">
+            На рисунке 3.1 представлена динамика суммарного балла обучающегося
+            во времени, по всем пройденным методикам. По горизонтальной оси
+            отложены даты проведения тестирования, по вертикальной — значение
+            суммарного балла. Различные методики обозначены различным цветом.
+        </p>
+        <div class="chart-wrap">
+            <canvas id="dynChart" height="220"></canvas>
+        </div>
+        <p class="text-center" style="font-size: .9rem; margin-top: 4px;">
+            Рисунок 3.1 — Динамика суммарного балла по датам тестирования
+        </p>
+
+        <!-- 4. Хронология -->
+        <h2>4. Хронология пройденных тестирований</h2>
+        <table class="table table-bordered">
+            <caption style="caption-side: top;">Таблица 4.1 — Список протоколов тестирования</caption>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">№</th>
+                    <th>Дата</th>
+                    <th>Методика</th>
+                    <th>Суммарный балл</th>
+                    <th>Уровень стресса</th>
                 </tr>
-                </tbody>
-            </table>
+            </thead>
+            <tbody>
+                <tr th:each="r, iter : ${results}">
+                    <td th:text="${iter.count}">1</td>
+                    <td th:text="${#temporals.format(r.takenAt, 'dd.MM.yyyy')}">—</td>
+                    <td th:text="${r.test != null ? r.test.name : '—'}">—</td>
+                    <td th:text="${r.totalScore}">0</td>
+                    <td th:text="${r.stressLevel != null ? r.stressLevel.name : '—'}">—</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 5. Заключение психолога -->
+        <h2>5. Заключение психолога</h2>
+        <p class="conclusion">
+            За период наблюдения зафиксировано
+            <strong th:text="${#lists.size(results)}">0</strong> завершённых тестирований.
+            Средний суммарный балл составил <strong th:text="${avgScore}">0</strong>,
+            размах значений — от <strong th:text="${minScore}">0</strong>
+            до <strong th:text="${maxScore}">0</strong>.
+            На основании наблюдаемой динамики психолог формулирует
+            индивидуальные рекомендации, размещаемые в разделе
+            <em>«Рекомендации»</em> личного кабинета обучающегося.
+        </p>
+    </div>
+
+    <!-- Подписи -->
+    <div class="sign-block">
+        <div>
+            <div class="role">Психолог-исполнитель:</div>
+            <div><span class="line"></span> / <span th:text="${user.login}">—</span> /</div>
+        </div>
+        <div>
+            <div class="role">Дата формирования карты:</div>
+            <div><strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">—</strong></div>
         </div>
     </div>
-</div>
-<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</article>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+document.addEventListener('DOMContentLoaded', function () {
+    const labels  = /*[[${chartDates}]]*/ [];
+    const scores  = /*[[${chartScores}]]*/ [];
+    const tests   = /*[[${chartTests}]]*/ [];
+
+    const canvas = document.getElementById('dynChart');
+    if (!canvas || labels.length === 0) return;
+
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Суммарный балл',
+                data: scores,
+                borderColor: '#5a4ba2',
+                backgroundColor: 'rgba(90, 75, 162, .12)',
+                tension: .25,
+                pointRadius: 5,
+                pointBackgroundColor: '#5a4ba2',
+                fill: true
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: (ctx) => 'Методика: ' + (tests[ctx.dataIndex] || '—')
+                    }
+                }
+            },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+});
+/*]]>*/
+</script>
 </body>
 </html>

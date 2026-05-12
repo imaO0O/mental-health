@@ -1,0 +1,93 @@
+@startuml conceptual
+' =====================================================================
+' Рисунок 2 — Концептуальная модель данных.
+' В нотации Чена используются прямоугольники (сущности), ромбы (связи)
+' и овалы (атрибуты). PlantUML class-diagram не поддерживает ромбы
+' и овалы как нативные формы, поэтому здесь все элементы — прямоугольники
+' со стилевой дифференциацией:
+'   * белые с чёрной рамкой — сущности;
+'   * жёлтые — связи (ромбы в нотации Чена);
+'   * светло-голубые, без полужирного заголовка — атрибуты (овалы).
+' Для строгой нотации Чена (с настоящими ромбами и овалами) см.
+' conceptual.drawio — открывается в diagrams.net / drawio.
+' =====================================================================
+
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+skinparam ranksep 35
+skinparam nodesep 35
+
+skinparam class {
+    BackgroundColor       White
+    BorderColor           Black
+    FontColor             Black
+    ArrowColor            Black
+    HeaderBackgroundColor White
+    StereotypeFontColor   #555555
+
+    BackgroundColor<<rel>>  #FFF2A8
+    BorderColor<<rel>>      #997700
+    HeaderBackgroundColor<<rel>> #FFF2A8
+
+    BackgroundColor<<attr>> #EFF6FF
+    BorderColor<<attr>>     #5577AA
+    HeaderBackgroundColor<<attr>> #EFF6FF
+}
+
+hide members
+hide circle
+hide stereotype
+
+' --- Сущности ---
+class "Студенты"          as Stu
+class "Психологи"         as Psy
+class "Тесты"             as Test
+class "Категории тестов"  as Cat
+class "Уровни стресса"    as Lvl
+
+' --- Связи (в нотации Чена — ромбы) ---
+class "Специализируется"   as REL_Spec <<rel>>
+class "Курирует"           as REL_Cur  <<rel>>
+class "Прохождение теста"  as REL_Pass <<rel>>
+class "Формулирует"        as REL_Form <<rel>>
+
+' --- Ключевые атрибуты и атрибуты связи (в нотации Чена — овалы) ---
+class "Номер зачётной книжки" as A_RBN  <<attr>>
+class "Табельный номер"       as A_PNUM <<attr>>
+class "Шифр теста"            as A_TC   <<attr>>
+class "Название категории"    as A_CN   <<attr>>
+class "Название уровня"       as A_LN   <<attr>>
+class "Номер протокола"       as A_PN   <<attr>>
+class "Балл"                  as A_SC   <<attr>>
+class "Дата прохождения"      as A_DT   <<attr>>
+
+' --- Привязка ключевых атрибутов к сущностям ---
+A_RBN  -- Stu
+A_PNUM -- Psy
+A_TC   -- Test
+A_CN   -- Cat
+A_LN   -- Lvl
+
+' --- Связи и их кардинальности (1, M, N, L) ---
+Cat       "N" -- "M" REL_Spec
+REL_Spec  --     Psy
+
+Psy       "L" -- "M" REL_Cur
+REL_Cur   --     Stu
+
+Stu       "M" -- "L" REL_Pass
+REL_Pass  "N" --     Test
+REL_Pass  --     Psy
+
+Psy       "L" -- "N" REL_Form
+REL_Form  --     Lvl
+
+' --- Атрибуты связи "Прохождение теста" ---
+REL_Pass .. A_PN
+REL_Pass .. A_SC
+REL_Pass .. A_DT
+
+@enduml

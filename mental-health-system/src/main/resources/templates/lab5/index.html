@@ -11,6 +11,8 @@
         .nav-tabs .nav-link.active { font-weight: 600; }
         table.dgv th { background: #eef0fb; }
         .panel { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+        .panel-before { background: #fff7e6; border: 1px solid #ffe2a8; border-radius: 8px; padding: 12px; }
+        .panel-after  { background: #e6f7ec; border: 1px solid #a8e6c0; border-radius: 8px; padding: 12px; }
     </style>
 </head>
 <body>
@@ -33,6 +35,7 @@
     </p>
 
     <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+    <div th:if="${warn}" class="alert alert-warning" th:text="${warn}"></div>
     <div th:if="${err}" class="alert alert-danger" th:text="${err}"></div>
 
     <ul class="nav nav-tabs mb-3">
@@ -46,12 +49,24 @@
     <!-- ============== Вкладка 1 ============== -->
     <div th:if="${tab=='1'}" class="panel">
         <h4>1. Добавить новый тест</h4>
-        <p class="text-muted small">Реализовано через <code>testRepository.save(...)</code> — без SQL-запросов.</p>
-        <form method="post" th:action="@{/lab5/task1}" class="row g-2 mb-3">
-            <div class="col-md-4"><input class="form-control" name="name" placeholder="Название *" required></div>
-            <div class="col-md-4"><input class="form-control" name="description" placeholder="Описание"></div>
-            <div class="col-md-3"><input class="form-control" name="instructions" placeholder="Инструкция"></div>
-            <div class="col-md-1"><button class="btn btn-primary w-100">+</button></div>
+        <p class="text-muted small">Реализовано через <code>testRepository.save(...)</code> — без SQL-запросов.
+            Шифр теста — естественный первичный ключ (PK), уникальный идентификатор внутри БД.</p>
+        <form method="post" th:action="@{/lab5/task1}" class="row g-2 mb-3 align-items-center">
+            <div class="col-md-2">
+                <input class="form-control" name="testCode" placeholder="Шифр (PSS-10) *"
+                       maxlength="20" required>
+            </div>
+            <div class="col-md-3"><input class="form-control" name="name" placeholder="Название *" required></div>
+            <div class="col-md-2"><input class="form-control" name="description" placeholder="Описание"></div>
+            <div class="col-md-2"><input class="form-control" name="instructions" placeholder="Инструкция"></div>
+            <div class="col-md-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="isActive"
+                           name="isActive" value="true" checked>
+                    <label class="form-check-label" for="isActive">Активен</label>
+                </div>
+            </div>
+            <div class="col-md-1"><button class="btn btn-primary w-100" title="Добавить">+</button></div>
         </form>
 
         <h6 class="text-muted">Текущее содержимое таблицы <code>tests</code>:</h6>
@@ -75,7 +90,7 @@
 
     <!-- ============== Вкладка 2 ============== -->
     <div th:if="${tab=='2'}" class="panel">
-        <h4>2. Ступенчатая корректировка баллов всех результатов</h4>
+        <h4>2. Ступенчатая корректировка баллов всех протоколов</h4>
         <p class="text-muted small">
             Аналог «сезонных скидок». Изменения выполняются навигационно: загрузка через
             <code>testResultRepository.findAll()</code>, затем итерация по объектам
@@ -84,17 +99,33 @@
         <table class="table table-sm w-auto">
             <thead><tr><th>Условие</th><th>Коэффициент</th></tr></thead>
             <tbody>
-                <tr><td><code>total_score &lt; 10</code></td><td>−10%</td></tr>
-                <tr><td><code>10 ≤ total_score ≤ 20</code></td><td>−20%</td></tr>
-                <tr><td><code>total_score &gt; 20</code></td><td>−30%</td></tr>
+                <tr><td><code>balls &lt; 10</code></td><td>−10%</td></tr>
+                <tr><td><code>10 ≤ balls ≤ 20</code></td><td>−20%</td></tr>
+                <tr><td><code>balls &gt; 20</code></td><td>−30%</td></tr>
             </tbody>
         </table>
         <form method="post" th:action="@{/lab5/task2}" class="mb-3">
             <button class="btn btn-primary">Применить корректировку</button>
         </form>
 
-        <h6 class="text-muted">Текущее содержимое <code>test_results</code>:</h6>
-        <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+        <div class="row" th:if="${beforeResults}">
+            <div class="col-md-6">
+                <div class="panel-before">
+                    <strong>📋 Снимок ДО выполнения</strong>
+                    <div th:replace="~{lab5/index :: snapshotTable(rows=${beforeResults})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after">
+                    <strong>✅ Снимок ПОСЛЕ выполнения</strong>
+                    <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+                </div>
+            </div>
+        </div>
+        <div th:unless="${beforeResults}">
+            <h6 class="text-muted">Текущее содержимое <code>test_protocols</code>:</h6>
+            <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+        </div>
     </div>
 
     <!-- ============== Вкладка 3 ============== -->
@@ -142,25 +173,54 @@
             <code>total_score</code> через JPA. Цикл останавливается, когда среднее
             становится меньше указанного порога или достигнут лимит итераций.
         </p>
-        <p>Текущее среднее значение <code>total_score</code>:
-            <strong th:text="${#numbers.formatDecimal(avgScore, 1, 2)}">0.00</strong></p>
+        <div class="alert alert-info py-2 small">
+            ℹ <strong>Как протестировать:</strong> чтобы цикл выполнил хотя бы одну итерацию,
+            порог должен быть <strong>меньше</strong> текущего среднего.
+            Если поставить порог больше — цикл сразу выйдет (0 итераций).
+        </div>
+        <p>Текущее среднее значение баллов:
+            <strong th:text="${#numbers.formatDecimal(avgScore, 1, 2)}">0.00</strong>
+            <span class="text-muted small">
+                → поставьте порог, например,
+                <code th:text="${#numbers.formatDecimal(avgScore > 1 ? avgScore - 1 : 0, 1, 1)}">0.0</code>
+                и нажмите «Запустить цикл».
+            </span>
+        </p>
 
         <form method="post" th:action="@{/lab5/task4}" class="row g-2 mb-3">
             <div class="col-auto">
                 <label class="form-label small mb-0">Порог среднего</label>
-                <input type="number" step="0.1" name="threshold" value="5" class="form-control" required>
+                <input type="number" step="0.1" min="0" name="threshold"
+                       th:value="${#numbers.formatDecimal(avgScore > 1 ? avgScore - 1 : 0, 1, 1)}"
+                       class="form-control" required>
             </div>
             <div class="col-auto">
                 <label class="form-label small mb-0">Лимит итераций</label>
-                <input type="number" name="maxIters" value="50" class="form-control" required>
+                <input type="number" min="1" name="maxIters" value="50" class="form-control" required>
             </div>
             <div class="col-auto align-self-end">
                 <button class="btn btn-primary">Запустить цикл</button>
             </div>
         </form>
 
-        <h6 class="text-muted">Текущее содержимое <code>test_results</code>:</h6>
-        <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+        <div class="row" th:if="${beforeResults}">
+            <div class="col-md-6">
+                <div class="panel-before">
+                    <strong>📋 Снимок ДО цикла</strong>
+                    <div th:replace="~{lab5/index :: snapshotTable(rows=${beforeResults})}"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel-after">
+                    <strong>✅ Снимок ПОСЛЕ цикла</strong>
+                    <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+                </div>
+            </div>
+        </div>
+        <div th:unless="${beforeResults}">
+            <h6 class="text-muted">Текущее содержимое <code>test_protocols</code>:</h6>
+            <div th:replace="~{lab5/index :: resultsTable(rows=${results})}"></div>
+        </div>
     </div>
 
     <!-- ============== Вкладка 5 ============== -->
@@ -208,7 +268,7 @@
     </div>
 </div>
 
-<!-- Фрагмент таблицы результатов -->
+<!-- Фрагмент таблицы результатов (JPA-сущности TestResult) -->
 <div th:fragment="resultsTable(rows)" class="table-responsive">
     <table class="table table-sm dgv">
         <thead>
@@ -219,9 +279,29 @@
                 <td><span class="badge bg-dark" th:text="${r.id}"></span></td>
                 <td th:text="${r.student != null ? r.student.fullName : '—'}"></td>
                 <td th:text="${r.test != null ? r.test.name : '—'}"></td>
-                <td th:text="${r.totalScore}"></td>
+                <td><strong th:text="${r.totalScore}"></strong></td>
                 <td th:text="${r.stressLevel != null ? r.stressLevel.name : '—'}"></td>
                 <td th:text="${r.dateTaken}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="6" class="text-muted text-center">— пусто —</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Фрагмент таблицы для "снимка ДО" — данные пришли как Map -->
+<div th:fragment="snapshotTable(rows)" class="table-responsive">
+    <table class="table table-sm dgv">
+        <thead>
+            <tr><th>№ протокола</th><th>Студент</th><th>Тест</th><th>Балл</th><th>Уровень</th><th>Дата</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="r : ${rows}">
+                <td><span class="badge bg-dark" th:text="${r['id']}"></span></td>
+                <td th:text="${r['studentName']}"></td>
+                <td th:text="${r['testName']}"></td>
+                <td><strong th:text="${r['totalScore']}"></strong></td>
+                <td th:text="${r['stressLevel']}"></td>
+                <td th:text="${r['dateTaken']}"></td>
             </tr>
             <tr th:if="${#lists.isEmpty(rows)}"><td colspan="6" class="text-muted text-center">— пусто —</td></tr>
         </tbody>

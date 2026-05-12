@@ -155,12 +155,26 @@ public class PsychologistController {
         int min = results.stream().mapToInt(r -> r.getTotalScore() == null ? 0 : r.getTotalScore()).min().orElse(0);
         int max = results.stream().mapToInt(r -> r.getTotalScore() == null ? 0 : r.getTotalScore()).max().orElse(0);
 
+        // Готовые массивы для Chart.js: даты, баллы, имена методик.
+        java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        java.util.List<String> chartDates  = new java.util.ArrayList<>();
+        java.util.List<Integer> chartScores = new java.util.ArrayList<>();
+        java.util.List<String> chartTests  = new java.util.ArrayList<>();
+        for (TestResult r : results) {
+            chartDates.add(r.getTakenAt() != null ? r.getTakenAt().format(df) : "—");
+            chartScores.add(r.getTotalScore() == null ? 0 : r.getTotalScore().intValue());
+            chartTests.add(r.getTest() != null ? r.getTest().getName() : "—");
+        }
+
         model.addAttribute("user", user);
         model.addAttribute("student", student);
         model.addAttribute("results", results);
         model.addAttribute("avgScore", Math.round(avg * 10) / 10.0);
         model.addAttribute("minScore", min);
         model.addAttribute("maxScore", max);
+        model.addAttribute("chartDates", chartDates);
+        model.addAttribute("chartScores", chartScores);
+        model.addAttribute("chartTests", chartTests);
         return "psychologist/student-dynamics";
     }
 
@@ -276,12 +290,22 @@ public class PsychologistController {
             avgByTest.put(t.getTestCode(), Math.round(avg * 10) / 10.0);
         }
 
+        // Готовые массивы для Chart.js (имя методики ↔ средний балл).
+        java.util.List<String> testNamesList = new java.util.ArrayList<>();
+        java.util.List<Double> testAvgsList = new java.util.ArrayList<>();
+        for (Test t : tests) {
+            testNamesList.add(t.getName());
+            testAvgsList.add(avgByTest.getOrDefault(t.getTestCode(), 0.0));
+        }
+
         model.addAttribute("user", user);
         model.addAttribute("tests", tests);
         model.addAttribute("questionCounts", buildQuestionCounts(tests));
         model.addAttribute("totalResults", allResults.size());
         model.addAttribute("levelCounts", levelCounts);
         model.addAttribute("avgByTest", avgByTest);
+        model.addAttribute("testNamesList", testNamesList);
+        model.addAttribute("testAvgsList", testAvgsList);
         return "psychologist/statistics";
     }
 

@@ -264,24 +264,47 @@ public class DbProceduresInitializer {
             $$ LANGUAGE plpgsql
             """);
 
-        // ЛР3 / 5. Вернуть суммарное количество прохождений заданного теста.
-        // Возвращает -1, если тест с таким шифром не существует (отличаем
-        // «теста нет» от «есть, но 0 прохождений» — иначе пользователю было бы
-        // непонятно, почему вернулся 0).
+        // ЛР3 / 5. Вернуть количество прохождений заданного теста.
+        // Если p_student_login пуст/NULL — считаем по всем студентам;
+        // если указан логин — фильтруем результаты только по этому студенту.
+        // Коды возврата через OUT-параметр:
+        //   -1 — теста с таким шифром нет;
+        //   -2 — студента с таким логином нет (только если логин указан);
+        //  ≥ 0 — фактическое количество прохождений.
         execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_test_total(VARCHAR)");
+        execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_test_total(VARCHAR, VARCHAR)");
         exec("""
             CREATE OR REPLACE PROCEDURE sp_lab3_test_total(
                 p_test_code VARCHAR,
+                p_student_login VARCHAR,
                 OUT p_total BIGINT)
             LANGUAGE plpgsql AS $$
+            DECLARE
+                v_rbn BIGINT;
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM tests WHERE test_code = p_test_code) THEN
                     p_total := -1;
                     RETURN;
                 END IF;
-                SELECT COUNT(*) INTO p_total
-                  FROM test_protocols
-                 WHERE test_code = p_test_code;
+                IF p_student_login IS NULL OR length(trim(p_student_login)) = 0 THEN
+                    -- Подсчёт по всем студентам
+                    SELECT COUNT(*) INTO p_total
+                      FROM test_protocols
+                     WHERE test_code = p_test_code;
+                ELSE
+                    -- Фильтр по конкретному студенту
+                    SELECT record_book_number INTO v_rbn
+                      FROM students
+                     WHERE login = p_student_login;
+                    IF v_rbn IS NULL THEN
+                        p_total := -2;
+                        RETURN;
+                    END IF;
+                    SELECT COUNT(*) INTO p_total
+                      FROM test_protocols
+                     WHERE test_code = p_test_code
+                       AND record_book_number = v_rbn;
+                END IF;
                 IF p_total IS NULL THEN
                     p_total := 0;
                 END IF;

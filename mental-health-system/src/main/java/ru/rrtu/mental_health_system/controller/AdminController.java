@@ -138,21 +138,45 @@ public class AdminController {
 
         var allUsers = userService.findAll();
         var allTests = testService.findAll();
+        var allResults = testResultRepository.findAll();
+
+        long studentsCount = allUsers.stream()
+                .filter(u -> u.getRole() != null && "STUDENT".equals(u.getRole().getName()))
+                .count();
+        long psychologistsCount = allUsers.stream()
+                .filter(u -> u.getRole() != null && "PSYCHOLOGIST".equals(u.getRole().getName()))
+                .count();
+        long adminsCount = allUsers.stream()
+                .filter(u -> u.getRole() != null && "ADMIN".equals(u.getRole().getName()))
+                .count();
+
+        // Распределение по уровням стресса — для диаграммы и таблицы
+        java.util.Map<String, Long> stressDistribution = new java.util.LinkedHashMap<>();
+        for (var r : allResults) {
+            if (r.getStressLevel() != null) {
+                stressDistribution.merge(r.getStressLevel().getName(), 1L, Long::sum);
+            }
+        }
+
+        // Кол-во прохождений по каждому тесту — для столбчатой диаграммы
+        java.util.Map<String, Long> testUsage = new java.util.LinkedHashMap<>();
+        for (var t : allTests) {
+            long n = allResults.stream()
+                    .filter(r -> r.getTest() != null
+                            && t.getTestCode().equals(r.getTest().getTestCode()))
+                    .count();
+            testUsage.put(t.getName(), n);
+        }
 
         model.addAttribute("user", user);
         model.addAttribute("totalUsers", allUsers.size());
         model.addAttribute("totalTests", allTests.size());
-        model.addAttribute("totalResults", testResultRepository.count());
-        model.addAttribute("studentsCount", allUsers.stream()
-                .filter(u -> "STUDENT".equals(u.getRole().getName()))
-                .count());
-        model.addAttribute("psychologistsCount", allUsers.stream()
-                .filter(u -> "PSYCHOLOGIST".equals(u.getRole().getName()))
-                .count());
-        model.addAttribute("adminsCount", allUsers.stream()
-                .filter(u -> "ADMIN".equals(u.getRole().getName()))
-                .count());
-
+        model.addAttribute("totalResults", (long) allResults.size());
+        model.addAttribute("studentsCount", studentsCount);
+        model.addAttribute("psychologistsCount", psychologistsCount);
+        model.addAttribute("adminsCount", adminsCount);
+        model.addAttribute("stressDistribution", stressDistribution);
+        model.addAttribute("testUsage", testUsage);
         return "admin/statistics";
     }
 }

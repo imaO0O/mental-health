@@ -72,8 +72,11 @@
                                         <td th:text="${role.id}">1</td>
                                         <td th:text="${role.name}">Название</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-primary"
-                                                    th:onclick="'showEditRoleModal(' + ${role.id} + ', \'' + ${role.name} + '\')'">
+                                            <!-- В Thymeleaf 3.1 запрещено передавать строковые переменные
+                                                 прямо в th:onclick (защита от XSS). Поэтому id и name
+                                                 идут через data-* атрибуты, а JS-обработчик их читает. -->
+                                            <button type="button" class="btn btn-sm btn-primary edit-role-btn"
+                                                    th:data-id="${role.id}" th:data-name="${role.name}">
                                                 ✏️ Редактировать
                                             </button>
                                             <form th:action="@{/admin/tables/roles/delete}" method="post" class="d-inline"
@@ -129,6 +132,12 @@
             var modal = new bootstrap.Modal(document.getElementById('editRoleModal'));
             modal.show();
         }
+        // Подписываем все кнопки "Редактировать" — данные читаются из data-*
+        document.querySelectorAll('.edit-role-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                showEditRoleModal(btn.dataset.id, btn.dataset.name);
+            });
+        });
     </script>
 </body>
 </html>

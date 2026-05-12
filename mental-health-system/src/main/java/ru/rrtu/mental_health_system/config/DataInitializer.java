@@ -162,21 +162,98 @@ public class DataInitializer {
         upsertAnswer(q4, (short) 3, "Я получаю очень мало удовольствия", (short) 2);
         upsertAnswer(q4, (short) 4, "Я не получаю никакого удовольствия", (short) 3);
 
+        // === Тест PSS-10 (Шкала воспринимаемого стресса, Cohen) ===
+        Test pss = upsertTest("PSS-10", "Шкала воспринимаемого стресса (Cohen)",
+                "Опросник для оценки уровня воспринимаемого стресса за последний месяц.",
+                "Оцените, насколько часто за последний месяц вы испытывали указанные ощущения.",
+                psy1, cStress);
+        Question pq1 = upsertQuestion(pss, (short) 1, "Как часто вас расстраивали неожиданные события?");
+        Question pq2 = upsertQuestion(pss, (short) 2, "Как часто вы чувствовали, что не контролируете важные вещи в жизни?");
+        Question pq3 = upsertQuestion(pss, (short) 3, "Как часто вы чувствовали нервозность и стресс?");
+        Question pq4 = upsertQuestion(pss, (short) 4, "Как часто вам казалось, что трудности накапливаются быстрее, чем вы успеваете их решать?");
+        addFrequencyScale(pq1);
+        addFrequencyScale(pq2);
+        addFrequencyScale(pq3);
+        addFrequencyScale(pq4);
+
+        // === Тест STAI (Шкала тревожности Спилбергера-Ханина) ===
+        Test stai = upsertTest("STAI", "Шкала ситуативной тревожности (Спилбергера-Ханина)",
+                "Опросник для оценки уровня ситуативной тревожности.",
+                "Прочитайте каждое утверждение и отметьте, насколько оно соответствует вашему состоянию в данный момент.",
+                psy1, cAnxiety);
+        Question sq1 = upsertQuestion(stai, (short) 1, "Я чувствую внутреннее напряжение");
+        Question sq2 = upsertQuestion(stai, (short) 2, "Я нервничаю");
+        Question sq3 = upsertQuestion(stai, (short) 3, "Я чувствую беспокойство");
+        Question sq4 = upsertQuestion(stai, (short) 4, "Меня одолевают тревожные мысли");
+        addAgreementScale(sq1);
+        addAgreementScale(sq2);
+        addAgreementScale(sq3);
+        addAgreementScale(sq4);
+
+        // === Тест MBI (Опросник профессионального выгорания, Maslach) ===
+        Test mbi = upsertTest("MBI", "Опросник профессионального выгорания (Maslach)",
+                "Опросник для оценки эмоционального истощения и деперсонализации.",
+                "Оцените, насколько часто вы испытываете описанные состояния в учебном процессе.",
+                psy2, cBurn);
+        Question mq1 = upsertQuestion(mbi, (short) 1, "Я чувствую эмоциональное истощение к концу учебной недели");
+        Question mq2 = upsertQuestion(mbi, (short) 2, "Я ощущаю себя «выжатым» после занятий");
+        Question mq3 = upsertQuestion(mbi, (short) 3, "Учёба отнимает у меня слишком много сил");
+        Question mq4 = upsertQuestion(mbi, (short) 4, "Я уже не получаю удовлетворения от учёбы");
+        addFrequencyScale(mq1);
+        addFrequencyScale(mq2);
+        addFrequencyScale(mq3);
+        addFrequencyScale(mq4);
+
         // === Рекомендации ===
         upsertRecommendation(sLow,  "Ваш уровень стресса в норме. Продолжайте вести здоровый образ жизни, занимайтесь спортом и соблюдайте режим сна.", (short) 1, psy1);
         upsertRecommendation(sMid,  "У вас умеренный уровень стресса. Рекомендуется больше отдыхать, практиковать техники релаксации и медитации.", (short) 2, psy1);
         upsertRecommendation(sHigh, "У вас высокий уровень стресса. Рекомендуется обратиться к психологу для консультации и освоения техник управления стрессом.", (short) 3, psy2);
         upsertRecommendation(sCrit, "У вас критический уровень стресса. Настоятельно рекомендуется немедленная консультация специалиста-психотерапевта.", (short) 4, psy2);
 
-        // === Демо-протоколы тестирования (для лабораторной №3) ===
-        // Чтобы вкладки 1, 3, 5 имели данные для демонстрации эффекта процедур.
-        upsertProtocol(stu0, bdi, (short) 8,  sMid);
-        upsertProtocol(stu0, bdi, (short) 4,  sLow);
-        upsertProtocol(stu1, bdi, (short) 11, sHigh);
-        upsertProtocol(stu2, bdi, (short) 6,  sMid);
-        upsertProtocol(stu3, bdi, (short) 12, sCrit);
+        // === Демо-протоколы тестирования (для лабораторных №3 и №5) ===
+        // Разнообразный набор: каждый студент проходил несколько тестов,
+        // каждый тест прошли несколько студентов. Это даёт богатую картину
+        // для процедур ЛР3 (массовый UPDATE, COUNT по тесту, удаление протоколов
+        // конкретного студента) и для табличного представления в ЛР5.
+
+        // BDI — депрессия
+        upsertProtocol(stu0, bdi,  (short) 8,  sHigh);   // 67% — Высокий
+        upsertProtocol(stu1, bdi,  (short) 11, sCrit);   // 92% — Критический
+        upsertProtocol(stu2, bdi,  (short) 6,  sMid);    // 50% — Средний
+        upsertProtocol(stu3, bdi,  (short) 12, sCrit);   // 100% — Критический
+
+        // PSS-10 — стресс
+        upsertProtocol(stu0, pss,  (short) 5,  sMid);    // 42%
+        upsertProtocol(stu1, pss,  (short) 9,  sHigh);   // 75%
+        upsertProtocol(stu2, pss,  (short) 7,  sHigh);   // 58%
+        upsertProtocol(stu3, pss,  (short) 11, sCrit);   // 92%
+
+        // STAI — тревога
+        upsertProtocol(stu0, stai, (short) 3,  sLow);    // 25%
+        upsertProtocol(stu1, stai, (short) 8,  sHigh);   // 67%
+        upsertProtocol(stu3, stai, (short) 10, sCrit);   // 83%
+
+        // MBI — выгорание
+        upsertProtocol(stu2, mbi,  (short) 8,  sHigh);   // 67%
+        upsertProtocol(stu3, mbi,  (short) 11, sCrit);   // 92%
 
         log.info("DataInitializer: засев завершён.");
+    }
+
+    /** Шкала «частоты»: Никогда / Иногда / Часто / Очень часто. */
+    private void addFrequencyScale(Question q) {
+        upsertAnswer(q, (short) 1, "Никогда",      (short) 0);
+        upsertAnswer(q, (short) 2, "Иногда",       (short) 1);
+        upsertAnswer(q, (short) 3, "Часто",        (short) 2);
+        upsertAnswer(q, (short) 4, "Очень часто",  (short) 3);
+    }
+
+    /** Шкала «согласия»: от «совсем не согласен» до «полностью согласен». */
+    private void addAgreementScale(Question q) {
+        upsertAnswer(q, (short) 1, "Совсем не согласен", (short) 0);
+        upsertAnswer(q, (short) 2, "Скорее не согласен", (short) 1);
+        upsertAnswer(q, (short) 3, "Скорее согласен",    (short) 2);
+        upsertAnswer(q, (short) 4, "Полностью согласен", (short) 3);
     }
 
     private TestResult upsertProtocol(Student student, Test test, Short totalScore, StressLevel level) {

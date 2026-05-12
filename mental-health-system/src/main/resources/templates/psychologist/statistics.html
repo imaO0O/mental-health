@@ -3,23 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Статистика</title>
+    <title>Отчёт о психодиагностическом мониторинге</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
-        .stat-card { border-left: 4px solid #5a4ba2; }
+        body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
+        .navbar { background-color: #5a4ba2 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .report {
+            max-width: 1000px; margin: 24px auto; background: #fff;
+            padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+        }
+        .report h1 { text-align: center; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: .5px; margin: 0 0 4px; line-height: 1.4; }
+        .report h2 { font-size: 1.1rem; font-weight: 700; margin-top: 36px;
+                     padding-bottom: 6px; border-bottom: 1px solid #999; }
+        .meta-block { margin-top: 18px; font-size: .95rem; line-height: 1.7; }
+        .meta-block .label { display: inline-block; min-width: 220px; color: #555; }
+        .report table { font-family: -apple-system, "Segoe UI", sans-serif; font-size: .9rem; }
+        .report table th { background: #f0f2f7; font-weight: 600; }
+        .report table td, .report table th { vertical-align: middle; }
+        .chart-wrap { max-width: 480px; margin: 12px auto; }
+        .chart-wrap.wide { max-width: 100%; }
+        .conclusion {
+            font-size: 1rem; line-height: 1.7; text-align: justify; text-indent: 28px;
+            margin-top: 12px;
+        }
+        .sign-block {
+            margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+            font-family: -apple-system, "Segoe UI", sans-serif; font-size: .92rem;
+        }
+        .sign-block .role { color: #555; margin-bottom: 4px; }
+        .sign-block .line { border-bottom: 1px solid #333; min-width: 200px; display: inline-block; }
         @media print {
             .navbar, .no-print, .btn { display: none !important; }
             body { background: #fff; }
-            .card { box-shadow: none; border: 1px solid #ccc; }
+            .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
             <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
             <div class="navbar-nav ms-auto">
@@ -27,86 +50,204 @@
                 <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
                 <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
                 <a class="nav-link" th:href="@{/psychologist/recommendation/create}">Рекомендация</a>
-                <a class="nav-link" th:href="@{/psychologist/statistics}">Статистика</a>
+                <a class="nav-link active" th:href="@{/psychologist/statistics}">Отчёт</a>
                 <a class="nav-link" th:href="@{/logout}">Выйти</a>
             </div>
         </div>
     </nav>
 
-    <div class="container py-4">
-        <div class="row mb-4">
-            <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <h1>📈 Статистика тестирования</h1>
-                    <p class="text-muted">Отчёт сформирован: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}"></span></p>
-                </div>
-                <button class="btn btn-outline-primary no-print" onclick="window.print()">🖨 Распечатать отчёт</button>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stat-card"><div class="card-body">
-                    <h6 class="text-muted">Всего тестов</h6>
-                    <h3 th:text="${#lists.size(tests)}">0</h3>
-                </div></div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stat-card"><div class="card-body">
-                    <h6 class="text-muted">Пройдено тестирований</h6>
-                    <h3 th:text="${totalResults}">0</h3>
-                </div></div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header"><h5 class="mb-0">Распределение по уровням стресса</h5></div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead><tr><th>Уровень</th><th>Количество</th><th>Доля</th></tr></thead>
-                            <tbody>
-                                <tr th:each="entry : ${levelCounts}">
-                                    <td th:text="${entry.key}"></td>
-                                    <td th:text="${entry.value}"></td>
-                                    <td th:text="${totalResults > 0 ? #numbers.formatDecimal(entry.value * 100.0 / totalResults, 1, 1) + ' %' : '—'}"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header"><h5 class="mb-0">Тесты — средние баллы</h5></div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead><tr><th>Название</th><th>Вопросов</th><th>Средний балл</th><th>Статус</th></tr></thead>
-                            <tbody>
-                                <tr th:each="test : ${tests}">
-                                    <td th:text="${test.name}"></td>
-                                    <td th:text="${questionCounts != null ? questionCounts.get(test.id) : 0}"></td>
-                                    <td th:text="${avgByTest != null ? avgByTest.get(test.id) : 0}"></td>
-                                    <td>
-                                        <span class="badge"
-                                              th:classappend="${test.isActive} ? 'bg-success' : 'bg-secondary'"
-                                              th:text="${test.isActive} ? 'Активен' : 'Неактивен'"></span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="no-print">
-            <a th:href="@{/psychologist/recommendation/create}" class="btn btn-outline-primary">➕ Добавить рекомендацию</a>
-        </div>
+    <div class="container-fluid no-print py-2 text-end" style="max-width: 1000px;">
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Печать отчёта (PDF)</button>
     </div>
 
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <article class="report">
+        <p class="text-center" style="font-size: .9rem; margin-bottom: 2px;">
+            Информационная система «Мониторинг ментального здоровья студентов»
+        </p>
+        <h1>Аналитический отчёт о результатах<br>психодиагностического мониторинга</h1>
+
+        <!-- 1. Общие сведения -->
+        <h2>1. Общие сведения</h2>
+        <div class="meta-block">
+            <div><span class="label">Учреждение:</span> Отдел психологической поддержки вуза</div>
+            <div><span class="label">Назначение отчёта:</span> анализ результатов скрининга психоэмоционального состояния обучающихся</div>
+            <div><span class="label">Дата формирования:</span>
+                <strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}">—</strong></div>
+            <div><span class="label">Психолог-исполнитель:</span>
+                <strong th:text="${user.login}">—</strong></div>
+        </div>
+
+        <!-- 2. Объём мониторинга -->
+        <h2>2. Объём проведённого мониторинга</h2>
+        <p style="text-indent: 28px;">
+            В рамках психодиагностического мониторинга применялись методики,
+            размещённые в системе. Объёмные показатели проведённой работы
+            приведены в таблице 2.1.
+        </p>
+        <table class="table table-bordered">
+            <caption style="caption-side: top;">Таблица 2.1 — Сводные показатели мониторинга</caption>
+            <thead><tr><th style="width: 5%;">№</th><th>Показатель</th><th style="width: 25%;">Значение</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Количество психодиагностических методик в системе</td>
+                    <td th:text="${#lists.size(tests)}">0</td></tr>
+                <tr><td>2</td><td>Общее количество завершённых протоколов тестирования</td>
+                    <td th:text="${totalResults}">0</td></tr>
+                <tr><td>3</td><td>Среднее количество протоколов на методику</td>
+                    <td th:text="${#lists.size(tests) > 0 ? #numbers.formatDecimal(totalResults * 1.0 / #lists.size(tests), 1, 2) : '—'}">0</td></tr>
+            </tbody>
+        </table>
+
+        <!-- 3. Распределение по уровням стресса -->
+        <h2>3. Распределение обследованных по уровню стресса</h2>
+        <p style="text-indent: 28px;" th:if="${totalResults == 0}">
+            На момент формирования отчёта данные для построения распределения
+            по уровням стресса отсутствуют.
+        </p>
+        <div th:if="${totalResults > 0}">
+            <p style="text-indent: 28px;">
+                Распределение обследованных по уровню воспринимаемого стресса
+                представлено в таблице 3.1 и на рисунке 3.1. Уровни стресса
+                сгруппированы согласно справочнику <em>«Уровни стресса»</em>
+                (низкий, средний, высокий, критический).
+            </p>
+            <table class="table table-bordered">
+                <caption style="caption-side: top;">Таблица 3.1 — Распределение протоколов по уровню стресса</caption>
+                <thead><tr><th>№</th><th>Уровень стресса</th><th>Количество, шт.</th><th>Доля, %</th></tr></thead>
+                <tbody>
+                    <tr th:each="entry, iter : ${levelCounts}">
+                        <td th:text="${iter.count}">1</td>
+                        <td th:text="${entry.key}">—</td>
+                        <td th:text="${entry.value}">0</td>
+                        <td th:text="${totalResults > 0 ? #numbers.formatDecimal(entry.value * 100.0 / totalResults, 1, 1) : '0,0'}">0</td>
+                    </tr>
+                    <tr style="font-weight: 600; background: #f6f6f6;">
+                        <td></td><td>Итого</td><td th:text="${totalResults}">0</td><td>100,0</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="chart-wrap">
+                <canvas id="stressChart" height="240"></canvas>
+            </div>
+            <p class="text-center" style="font-size: .9rem; margin-top: 4px;">
+                Рисунок 3.1 — Распределение протоколов по уровню стресса
+            </p>
+        </div>
+
+        <!-- 4. Средние показатели по методикам -->
+        <h2>4. Средние показатели по применяемым методикам</h2>
+        <p style="text-indent: 28px;">
+            В таблице 4.1 приведены средние значения суммарного балла,
+            наблюдаемые при прохождении каждой из методик, а также её
+            операционные характеристики (количество вопросов, статус).
+            На рисунке 4.1 — графическое сопоставление средних баллов.
+        </p>
+        <table class="table table-bordered">
+            <caption style="caption-side: top;">Таблица 4.1 — Сравнительный анализ методик</caption>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Шифр методики</th>
+                    <th>Наименование</th>
+                    <th>Вопросов</th>
+                    <th>Средний балл</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="test, iter : ${tests}">
+                    <td th:text="${iter.count}">1</td>
+                    <td><code th:text="${test.testCode}">—</code></td>
+                    <td th:text="${test.name}">—</td>
+                    <td th:text="${questionCounts != null ? questionCounts.get(test.testCode) : 0}">0</td>
+                    <td th:text="${avgByTest != null ? avgByTest.get(test.testCode) : '—'}">0</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${test.isActive} ? 'bg-success' : 'bg-secondary'"
+                              th:text="${test.isActive} ? 'активна' : 'не активна'"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="chart-wrap wide" th:if="${not #lists.isEmpty(tests)}">
+            <canvas id="avgChart" height="220"></canvas>
+        </div>
+        <p class="text-center" style="font-size: .9rem; margin-top: 4px;"
+           th:if="${not #lists.isEmpty(tests)}">
+            Рисунок 4.1 — Сравнение средних баллов по методикам
+        </p>
+
+        <!-- 5. Выводы -->
+        <h2>5. Выводы и рекомендации</h2>
+        <p class="conclusion">
+            Проведённый мониторинг охватил
+            <strong th:text="${totalResults}">0</strong> протоколов тестирования
+            по <strong th:text="${#lists.size(tests)}">0</strong> методикам.
+            Согласно полученным данным, обучающиеся, относящиеся к группам
+            <em>«высокий»</em> и <em>«критический»</em> уровни стресса, нуждаются
+            в индивидуальной консультации психолога и в персональных
+            рекомендациях, размещаемых в системе. Обучающимся группы
+            <em>«средний»</em> рекомендуются методики саморегуляции и
+            психопрофилактические мероприятия.
+        </p>
+
+        <!-- Подписи -->
+        <div class="sign-block">
+            <div>
+                <div class="role">Психолог-исполнитель:</div>
+                <div><span class="line"></span> / <span th:text="${user.login}">—</span> /</div>
+            </div>
+            <div>
+                <div class="role">Дата формирования:</div>
+                <div><strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">—</strong></div>
+            </div>
+        </div>
+    </article>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function () {
+        const stressLabels = /*[[${levelCounts.keySet()}]]*/ [];
+        const stressValues = /*[[${levelCounts.values()}]]*/ [];
+        const testLabels   = /*[[${testNamesList}]]*/ [];
+        const testAvgs     = /*[[${testAvgsList}]]*/ [];
+
+        const stressPalette = {
+            'Низкий':       '#59a14f',
+            'Средний':      '#edc949',
+            'Высокий':      '#f28e2b',
+            'Критический':  '#e15759'
+        };
+        const stressColors = stressLabels.map(l => stressPalette[l] || '#888');
+
+        // Рисунок 3.1 — pie по уровням стресса
+        if (stressLabels.length > 0) {
+            new Chart(document.getElementById('stressChart'), {
+                type: 'pie',
+                data: { labels: stressLabels,
+                        datasets: [{ data: stressValues, backgroundColor: stressColors }] },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // Рисунок 4.1 — bar по средним баллам
+        const avgCanvas = document.getElementById('avgChart');
+        if (avgCanvas && testLabels.length > 0) {
+            new Chart(avgCanvas, {
+                type: 'bar',
+                data: {
+                    labels: testLabels,
+                    datasets: [{ label: 'Средний балл', data: testAvgs, backgroundColor: '#5a4ba2' }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    });
+    /*]]>*/
+    </script>
 </body>
 </html>

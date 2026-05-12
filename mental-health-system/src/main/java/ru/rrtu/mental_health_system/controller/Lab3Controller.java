@@ -123,28 +123,41 @@ public class Lab3Controller {
         return "redirect:/lab3?tab=4";
     }
 
-    // ───────── ЛР3/5: суммарное количество прохождений теста ─────────
-    // Процедура возвращает -1, если теста с заданным шифром нет в БД.
+    // ───────── ЛР3/5: количество прохождений теста (опционально — по студенту) ─────────
+    // Процедура принимает 2 IN-параметра и 1 OUT-параметр:
+    //   p_test_code      — шифр теста (обязательно);
+    //   p_student_login  — логин студента (можно пустой → считаем по всем);
+    //   p_total          — OUT BIGINT: количество или код ошибки (-1, -2).
     // Используем прямой "CALL ...": JDBC-escape "{call ...}" в pgjdbc
     // транслируется в "SELECT * FROM ...", что для PROCEDURE недопустимо.
     @PostMapping("/task5")
-    public String task5(@RequestParam String testCode, RedirectAttributes ra) {
+    public String task5(@RequestParam String testCode,
+                        @RequestParam(required = false, defaultValue = "") String studentLogin,
+                        RedirectAttributes ra) {
+        final String login = studentLogin == null ? "" : studentLogin.trim();
         try {
             Long total = jdbc.execute((java.sql.Connection con) -> {
-                try (CallableStatement cs = con.prepareCall("CALL sp_lab3_test_total(?, ?)")) {
+                try (CallableStatement cs = con.prepareCall("CALL sp_lab3_test_total(?, ?, ?)")) {
                     cs.setString(1, testCode);
-                    cs.registerOutParameter(2, Types.BIGINT);
+                    cs.setString(2, login);
+                    cs.registerOutParameter(3, Types.BIGINT);
                     cs.execute();
-                    return cs.getLong(2);
+                    return cs.getLong(3);
                 }
             });
-            if (total != null && total < 0) {
+            if (total != null && total == -1) {
                 ra.addFlashAttribute("err",
                         "Тест с шифром «" + testCode + "» не найден в БД.");
+            } else if (total != null && total == -2) {
+                ra.addFlashAttribute("err",
+                        "Студент с логином «" + login + "» не найден в БД.");
             } else {
-                ra.addFlashAttribute("msg",
-                        "По тесту «" + testCode + "» зафиксировано прохождений: " + total);
+                String scope = login.isEmpty()
+                        ? "По тесту «" + testCode + "» всего прохождений: "
+                        : "Студент «" + login + "» прошёл тест «" + testCode + "» раз: ";
+                ra.addFlashAttribute("msg", scope + total);
                 ra.addFlashAttribute("totalCount", total);
+                ra.addFlashAttribute("scopeLabel", login.isEmpty() ? "все студенты" : login);
             }
         } catch (DataAccessException e) {
             ra.addFlashAttribute("err", "Ошибка: " + e.getMostSpecificCause().getMessage());
