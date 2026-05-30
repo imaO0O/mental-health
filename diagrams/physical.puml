@@ -1,0 +1,222 @@
+@startuml physical
+' =====================================================================
+' Рисунок 17 — Физическая модель данных (схема данных СУБД PostgreSQL).
+' Физическая модель — это логическая модель (рисунок 3), дополненная
+' типами данных СУБД PostgreSQL. Имена сущностей — в единственном числе;
+' в скобках указано имя таблицы в БД (латиницей), что соответствует
+' фактическим идентификаторам схемы schema.sql.
+' Подчёркнутый атрибут — потенциальный (первичный) ключ PK;
+' пометка FK — внешний ключ.
+' =====================================================================
+
+!pragma layout elk
+
+top to bottom direction
+
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam linetype ortho
+skinparam ranksep 70
+skinparam nodesep 70
+skinparam padding 4
+
+skinparam class {
+    BackgroundColor       White
+    BorderColor           Black
+    FontColor             Black
+    ArrowColor            #444444
+    ArrowFontColor        Black
+    ArrowFontSize         10
+    HeaderBackgroundColor #EEF0FB
+    AttributeFontColor    Black
+}
+
+hide circle
+
+' ===== ДОМЕН: справочники-словари =====
+together {
+  entity "Роль\n(roles)" as Roles {
+      * <u>Название роли</u> : VARCHAR(30)  <<PK>>
+      --
+        Описание : TEXT
+  }
+
+  entity "Категория теста\n(test_categories)" as Categories {
+      * <u>Название категории</u> : VARCHAR(50)  <<PK>>
+      --
+        Описание : TEXT
+  }
+
+  entity "Уровень стресса\n(stress_levels)" as StressLevels {
+      * <u>Название уровня</u> : VARCHAR(30)  <<PK>>
+      --
+      * Минимальный процент : SMALLINT
+      * Максимальный процент : SMALLINT
+  }
+
+  entity "Статус прохождения\n(result_statuses)" as Statuses {
+      * <u>Название статуса</u> : VARCHAR(30)  <<PK>>
+      --
+        Описание : TEXT
+  }
+}
+
+' ===== ДОМЕН: учётные записи и профили =====
+together {
+  entity "Пользователь\n(users)" as Users {
+      * <u>Логин</u> : VARCHAR(50)  <<PK>>
+      --
+      * Хэш пароля : VARCHAR(255)
+      * Название роли : VARCHAR(30)  <<FK>>
+        Дата создания : TIMESTAMP
+  }
+
+  entity "Студент\n(students)" as Students {
+      * <u>Номер зачётной книжки</u> : BIGINT  <<PK>>
+      --
+      * Логин : VARCHAR(50)  <<FK>>
+      * Фамилия : VARCHAR(50)
+      * Имя : VARCHAR(50)
+        Отчество : VARCHAR(50)
+      * Группа : VARCHAR(20)
+        Электронная почта : VARCHAR(100)
+        Телефон : VARCHAR(20)
+  }
+
+  entity "Психолог\n(psychologists)" as Psychologists {
+      * <u>Табельный номер</u> : BIGINT  <<PK>>
+      --
+      * Логин : VARCHAR(50)  <<FK>>
+      * Фамилия : VARCHAR(50)
+      * Имя : VARCHAR(50)
+        Отчество : VARCHAR(50)
+        Должность : VARCHAR(100)
+        Электронная почта : VARCHAR(100)
+        Телефон : VARCHAR(20)
+  }
+
+  entity "Специализация психолога\n(psychologist_specializations)" as Specs {
+      * <u>Табельный номер</u> : BIGINT        <<PK,FK>>
+      * <u>Название категории</u> : VARCHAR(50) <<PK,FK>>
+  }
+}
+
+' ===== ДОМЕН: тесты и вопросы =====
+together {
+  entity "Тест\n(tests)" as Tests {
+      * <u>Шифр теста</u> : VARCHAR(20)  <<PK>>
+      --
+      * Название : VARCHAR(200)
+        Описание : TEXT
+        Инструкции : TEXT
+        Активен : BOOLEAN
+        Автор (Таб. номер) : BIGINT       <<FK>>
+        Название категории : VARCHAR(50)  <<FK>>
+  }
+
+  entity "Вопрос\n(questions)" as Questions {
+      * <u>Номер вопроса</u> : BIGINT  <<PK>>
+      --
+      * Шифр теста : VARCHAR(20)  <<FK>>
+      * Текст вопроса : TEXT
+      * Порядковый номер : SMALLINT
+  }
+
+  entity "Вариант ответа\n(answers)" as Answers {
+      * <u>Код варианта ответа</u> : BIGINT  <<PK>>
+      --
+      * Номер вопроса : BIGINT       <<FK>>
+      * Текст ответа : VARCHAR(200)
+      * Балл : SMALLINT
+      * Порядковый номер : SMALLINT
+  }
+}
+
+' ===== ДОМЕН: прохождение тестов =====
+together {
+  entity "Протокол тестирования\n(test_protocols)" as Protocols {
+      * <u>Номер протокола</u> : BIGINT  <<PK>>
+      --
+      * Номер зачётной книжки : BIGINT       <<FK>>
+      * Шифр теста : VARCHAR(20)  <<FK>>
+      * Дата и время прохождения : TIMESTAMP
+      * Суммарный балл : SMALLINT
+        Название уровня : VARCHAR(30)  <<FK>>
+        Название статуса : VARCHAR(30)  <<FK>>
+  }
+
+  entity "Ответ пользователя\n(result_answers)" as UserAnswers {
+      * <u>Номер записи ответа</u> : BIGINT  <<PK>>
+      --
+      * Номер протокола : BIGINT  <<FK>>
+      * Номер вопроса : BIGINT  <<FK>>
+      * Код варианта ответа : BIGINT  <<FK>>
+  }
+}
+
+' ===== ДОМЕН: сопровождение =====
+together {
+  entity "Рекомендация\n(recommendations)" as Recs {
+      * <u>Код рекомендации</u> : BIGINT  <<PK>>
+      --
+      * Название уровня : VARCHAR(30)  <<FK>>
+      * Текст рекомендации : TEXT
+        Порядковый номер : SMALLINT
+        Автор (Таб. номер) : BIGINT  <<FK>>
+  }
+
+  entity "Заметка психолога\n(psychologist_notes)" as Notes {
+      * <u>Номер заметки</u> : BIGINT  <<PK>>
+      --
+      * Табельный номер : BIGINT  <<FK>>
+      * Номер зачётной книжки : BIGINT  <<FK>>
+      * Дата заметки : DATE
+      * Текст заметки : TEXT
+  }
+
+  entity "Журнал аудита\n(audit_log)" as Audit {
+      * <u>Номер записи аудита</u> : BIGINT  <<PK>>
+      --
+      * Время операции : TIMESTAMP
+        Логин : VARCHAR(50)  <<FK>>
+      * Тип операции : VARCHAR(20)
+      * Имя таблицы : VARCHAR(40)
+        Подробности : TEXT
+  }
+}
+
+' ===== Связи =====
+' Авторизация
+Roles        ||--o{ Users        : "1..N"
+Users        ||--o| Students     : "1..1"
+Users        ||--o| Psychologists: "1..1"
+Users        ||--o{ Audit        : "1..N"
+
+' Специализации
+Psychologists ||--o{ Specs       : "1..N"
+Categories    ||--o{ Specs       : "1..N"
+
+' Тесты
+Categories    ||--o{ Tests       : "1..N"
+Psychologists ||--o{ Tests       : "1..N"
+Tests         ||--o{ Questions   : "1..N"
+Questions     ||--o{ Answers     : "1..N"
+
+' Прохождение
+Students     ||--o{ Protocols    : "1..N"
+Tests        ||--o{ Protocols    : "1..N"
+StressLevels ||--o{ Protocols    : "1..N"
+Statuses     ||--o{ Protocols    : "1..N"
+Protocols    ||--o{ UserAnswers  : "1..N"
+Questions    ||--o{ UserAnswers  : "1..N"
+Answers      ||--o{ UserAnswers  : "1..N"
+
+' Сопровождение
+StressLevels  ||--o{ Recs        : "1..N"
+Psychologists ||--o{ Recs        : "1..N"
+Psychologists ||--o{ Notes       : "1..N"
+Students      ||--o{ Notes       : "1..N"
+
+@enduml
