@@ -87,8 +87,8 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связь "Формулирует рекомендацию": Психолог L — N Уровень стресса ============ -->
-        <mxCell id="e_psy_form" value="L" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_psy" target="rel_form">
+        <!-- ============ Связь "Формулирует рекомендацию": Психолог M — N Уровень стресса ============ -->
+        <mxCell id="e_psy_form" value="M" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_psy" target="rel_form">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_form_lvl" value="N" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_form" target="ent_lvl">
@@ -103,11 +103,8 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связь "Прохождение теста": тернарная Студент N — M Тест, L Психолог ============ -->
+        <!-- ============ Связь "Прохождение теста": бинарная Студент N — M Тест ============ -->
         <mxCell id="e_stu_pass" value="N" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_stu" target="rel_pass">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-        <mxCell id="e_pass_psy" value="L" style="endArrow=none;html=1;rounded=0;exitX=0.5;exitY=0;entryX=0.5;entryY=1;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_pass" target="ent_psy">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_pass_test" value="M" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_pass" target="ent_test">
