@@ -5,29 +5,29 @@
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
-        <!-- ============ Сущности (прямоугольники) ============ -->
-        <mxCell id="ent_cat" value="Категории тестов" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
+        <!-- ============ Сущности (прямоугольники, имена в единственном числе) ============ -->
+        <mxCell id="ent_cat" value="Категория теста" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
           <mxGeometry x="80" y="180" width="180" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="ent_psy" value="Психологи" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
+        <mxCell id="ent_psy" value="Психолог" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
           <mxGeometry x="700" y="180" width="180" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="ent_lvl" value="Уровни стресса" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
+        <mxCell id="ent_lvl" value="Уровень стресса" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
           <mxGeometry x="1320" y="180" width="180" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="ent_stu" value="Студенты" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
+        <mxCell id="ent_stu" value="Студент" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
           <mxGeometry x="240" y="780" width="180" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="ent_test" value="Тесты" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
+        <mxCell id="ent_test" value="Тест" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=14;fontStyle=0" vertex="1" parent="1">
           <mxGeometry x="1320" y="780" width="180" height="60" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связи (ромбы) ============ -->
-        <mxCell id="rel_spec" value="Специализи- руется" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12" vertex="1" parent="1">
-          <mxGeometry x="380" y="170" width="200" height="80" as="geometry"/>
+        <!-- ============ Связи (ромбы — действия) ============ -->
+        <mxCell id="rel_spec" value="Специализируется" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="360" y="170" width="240" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="rel_form" value="Формулирует" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12" vertex="1" parent="1">
-          <mxGeometry x="1020" y="170" width="200" height="80" as="geometry"/>
+        <mxCell id="rel_form" value="Формулирует рекомендацию" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="1010" y="160" width="240" height="100" as="geometry"/>
         </mxCell>
         <mxCell id="rel_cur" value="Курирует" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=12" vertex="1" parent="1">
           <mxGeometry x="240" y="470" width="180" height="80" as="geometry"/>
@@ -36,7 +36,7 @@
           <mxGeometry x="770" y="570" width="220" height="90" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Атрибуты (овалы) ============ -->
+        <!-- ============ Атрибуты (овалы — ключевые атрибуты и атрибуты связи) ============ -->
         <mxCell id="att_cn" value="Название категории" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11" vertex="1" parent="1">
           <mxGeometry x="60" y="40" width="160" height="60" as="geometry"/>
         </mxCell>
@@ -79,7 +79,7 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связи "Специализируется": Кат N — M Психологи ============ -->
+        <!-- ============ Связь "Специализируется": Категория N — M Психолог ============ -->
         <mxCell id="e_cat_spec" value="N" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_cat" target="rel_spec">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
@@ -87,7 +87,7 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связи "Формулирует": Психологи L — N Уровни ============ -->
+        <!-- ============ Связь "Формулирует рекомендацию": Психолог L — N Уровень стресса ============ -->
         <mxCell id="e_psy_form" value="L" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_psy" target="rel_form">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
@@ -95,22 +95,22 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связи "Курирует": Психологи L — M Студенты ============ -->
-        <mxCell id="e_psy_cur" value="L" style="endArrow=none;html=1;rounded=0;exitX=0.25;exitY=1;entryX=0.5;entryY=0;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_psy" target="rel_cur">
+        <!-- ============ Связь "Курирует": Психолог M — N Студент ============ -->
+        <mxCell id="e_psy_cur" value="M" style="endArrow=none;html=1;rounded=0;exitX=0.25;exitY=1;entryX=0.5;entryY=0;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_psy" target="rel_cur">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_cur_stu" value="M" style="endArrow=none;html=1;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_cur" target="ent_stu">
+        <mxCell id="e_cur_stu" value="N" style="endArrow=none;html=1;rounded=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_cur" target="ent_stu">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ============ Связь "Прохождение теста": тернарная Студенты M — L Психологи, N Тесты ============ -->
-        <mxCell id="e_stu_pass" value="M" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_stu" target="rel_pass">
+        <!-- ============ Связь "Прохождение теста": тернарная Студент N — M Тест, L Психолог ============ -->
+        <mxCell id="e_stu_pass" value="N" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="ent_stu" target="rel_pass">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
         <mxCell id="e_pass_psy" value="L" style="endArrow=none;html=1;rounded=0;exitX=0.5;exitY=0;entryX=0.5;entryY=1;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_pass" target="ent_psy">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="e_pass_test" value="N" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_pass" target="ent_test">
+        <mxCell id="e_pass_test" value="M" style="endArrow=none;html=1;rounded=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=14;fontStyle=1" edge="1" parent="1" source="rel_pass" target="ent_test">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
