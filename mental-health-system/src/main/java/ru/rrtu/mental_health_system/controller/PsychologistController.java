@@ -298,6 +298,44 @@ public class PsychologistController {
             testAvgsList.add(avgByTest.getOrDefault(t.getTestCode(), 0.0));
         }
 
+        // Список обследованных обучающихся с последним результатом и сигнальной
+        // отметкой для тех, чей уровень стресса требует консультации (Высокий/Критический).
+        java.util.Set<String> alarmLevels =
+                new java.util.HashSet<>(java.util.Arrays.asList("Высокий", "Критический"));
+        java.util.List<java.util.Map<String, Object>> studentRows = new java.util.ArrayList<>();
+        for (Student s : studentRepository.findAll()) {
+            List<TestResult> rs = testService.getResultsByStudentId(s.getRecordBookNumber());
+            TestResult last = null;
+            for (TestResult r : rs) {
+                if (last == null || (r.getTakenAt() != null && last.getTakenAt() != null
+                        && r.getTakenAt().isAfter(last.getTakenAt()))) {
+                    last = r;
+                }
+            }
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("fio", s.getFullName());
+            row.put("group", s.getGroupName());
+            if (last != null) {
+                row.put("hasResult", true);
+                row.put("date", last.getTakenAt());
+                row.put("testName", last.getTest() != null ? last.getTest().getName() : "—");
+                row.put("score", last.getTotalScore());
+                String lvl = last.getStressLevel() != null ? last.getStressLevel().getLevelName() : null;
+                row.put("level", lvl);
+                row.put("alarm", lvl != null && alarmLevels.contains(lvl));
+            } else {
+                row.put("hasResult", false);
+                row.put("date", null);
+                row.put("testName", "—");
+                row.put("score", null);
+                row.put("level", null);
+                row.put("alarm", false);
+            }
+            studentRows.add(row);
+        }
+        long alarmCount = studentRows.stream()
+                .filter(r -> Boolean.TRUE.equals(r.get("alarm"))).count();
+
         model.addAttribute("user", user);
         model.addAttribute("tests", tests);
         model.addAttribute("questionCounts", buildQuestionCounts(tests));
@@ -306,6 +344,8 @@ public class PsychologistController {
         model.addAttribute("avgByTest", avgByTest);
         model.addAttribute("testNamesList", testNamesList);
         model.addAttribute("testAvgsList", testAvgsList);
+        model.addAttribute("studentRows", studentRows);
+        model.addAttribute("alarmCount", alarmCount);
         return "psychologist/statistics";
     }
 

@@ -5,8 +5,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.rrtu.mental_health_system.model.User;
+import ru.rrtu.mental_health_system.model.AuditLog;
 import ru.rrtu.mental_health_system.repository.RoleRepository;
 import ru.rrtu.mental_health_system.repository.TestResultRepository;
+import ru.rrtu.mental_health_system.repository.AuditLogRepository;
 import ru.rrtu.mental_health_system.service.TestService;
 import ru.rrtu.mental_health_system.service.UserService;
 
@@ -18,15 +20,18 @@ public class AdminController {
     private final TestService testService;
     private final RoleRepository roleRepository;
     private final TestResultRepository testResultRepository;
+    private final AuditLogRepository auditLogRepository;
 
     public AdminController(UserService userService,
                            TestService testService,
                            RoleRepository roleRepository,
-                           TestResultRepository testResultRepository) {
+                           TestResultRepository testResultRepository,
+                           AuditLogRepository auditLogRepository) {
         this.userService = userService;
         this.testService = testService;
         this.roleRepository = roleRepository;
         this.testResultRepository = testResultRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping("/dashboard")
@@ -44,6 +49,56 @@ public class AdminController {
                 .filter(u -> "PSYCHOLOGIST".equals(u.getRole().getName()))
                 .count());
         return "admin/dashboard";
+    }
+
+    /** Журнал аудита изменений в БД (рис. 40 ПЗ): фильтр по дате, пользователю и таблице. */
+    @GetMapping("/audit")
+    public String audit(@RequestParam(required = false) String login,
+                        @RequestParam(required = false) String table,
+                        @RequestParam(required = false) String from,
+                        @RequestParam(required = false) String to,
+                        Model model, Authentication authentication) {
+        User user = userService.findByLogin(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/login";
+
+        java.util.List<AuditLog> all = auditLogRepository.findAll(
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC, "actionTime"));
+
+        String loginQ = login == null ? "" : login.trim().toLowerCase();
+        String tableQ = table == null ? "" : table.trim();
+        java.time.LocalDate fromD = parseAuditDate(from);
+        java.time.LocalDate toD = parseAuditDate(to);
+
+        java.util.List<AuditLog> filtered = all.stream()
+                .filter(a -> loginQ.isEmpty() || (a.getLogin() != null && a.getLogin().toLowerCase().contains(loginQ)))
+                .filter(a -> tableQ.isEmpty() || tableQ.equals(a.getTableName()))
+                .filter(a -> fromD == null || (a.getActionTime() != null && !a.getActionTime().toLocalDate().isBefore(fromD)))
+                .filter(a -> toD == null || (a.getActionTime() != null && !a.getActionTime().toLocalDate().isAfter(toD)))
+                .toList();
+
+        java.util.List<String> tables = all.stream()
+                .map(AuditLog::getTableName)
+                .filter(java.util.Objects::nonNull)
+                .distinct().sorted().toList();
+
+        model.addAttribute("user", user);
+        model.addAttribute("logs", filtered);
+        model.addAttribute("totalCount", all.size());
+        model.addAttribute("tables", tables);
+        model.addAttribute("fLogin", login);
+        model.addAttribute("fTable", table);
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
+        return "admin/audit";
+    }
+
+    private java.time.LocalDate parseAuditDate(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : java.time.LocalDate.parse(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @GetMapping("/users")

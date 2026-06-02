@@ -178,8 +178,55 @@
             Рисунок 4.1 — Сравнение средних баллов по методикам
         </p>
 
-        <!-- 5. Выводы -->
-        <h2>5. Выводы и рекомендации</h2>
+        <!-- 5. Список обследованных обучающихся -->
+        <h2>5. Обучающиеся: последние результаты и сигнальные отметки</h2>
+        <p style="text-indent: 28px;" th:if="${studentRows == null or #lists.isEmpty(studentRows)}">
+            Список обучающихся пуст.
+        </p>
+        <div th:if="${studentRows != null and not #lists.isEmpty(studentRows)}">
+            <p style="text-indent: 28px;">
+                В таблице 5.1 приведён список обучающихся с результатами последнего
+                пройденного тестирования. Сигнальной отметкой <em>«⚠ Требует консультации»</em>
+                выделены обучающиеся, чей уровень стресса определён как «Высокий» или
+                «Критический». Всего таких обучающихся:
+                <strong th:text="${alarmCount}">0</strong>.
+            </p>
+            <table class="table table-bordered">
+                <caption style="caption-side: top;">Таблица 5.1 — Обучающиеся и их последние результаты</caption>
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">№</th>
+                        <th>Фамилия, имя, отчество</th>
+                        <th>Группа</th>
+                        <th>Дата</th>
+                        <th>Методика</th>
+                        <th style="width: 8%;">Балл</th>
+                        <th>Уровень стресса</th>
+                        <th>Отметка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r, it : ${studentRows}"
+                        th:style="${r.alarm} ? 'background:#fdecea;' : ''">
+                        <td th:text="${it.count}">1</td>
+                        <td th:text="${r.fio}">—</td>
+                        <td th:text="${r.group}">—</td>
+                        <td th:text="${r.hasResult ? #temporals.format(r.date, 'dd.MM.yyyy') : '—'}">—</td>
+                        <td th:text="${r.testName}">—</td>
+                        <td th:text="${r.hasResult ? r.score : '—'}">—</td>
+                        <td th:text="${r.level != null ? r.level : '—'}">—</td>
+                        <td>
+                            <span th:if="${r.alarm}" class="badge bg-danger">⚠ Требует консультации</span>
+                            <span th:if="${!r.alarm and r.hasResult}" class="badge bg-success">в норме</span>
+                            <span th:if="${!r.hasResult}" class="text-muted small">не обследован</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 6. Выводы -->
+        <h2>6. Выводы и рекомендации</h2>
         <p class="conclusion">
             Проведённый мониторинг охватил
             <strong th:text="${totalResults}">0</strong> протоколов тестирования

@@ -3,27 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои результаты</title>
+    <title>История прохождений</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #4a90a4 !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #4a90a4; border-color: #4a90a4; }
+        body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
+        .navbar { background-color: #4a90a4 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .report {
+            max-width: 1000px; margin: 24px auto; background: #fff;
+            padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+        }
+        .report h1 { text-align: center; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: .5px; margin: 0 0 4px; line-height: 1.4; }
+        .report h2 { font-size: 1.1rem; font-weight: 700; margin-top: 32px;
+                     padding-bottom: 6px; border-bottom: 1px solid #999; }
+        .report table { font-family: -apple-system, "Segoe UI", sans-serif; font-size: .9rem; }
+        .report table th { background: #f0f2f7; font-weight: 600; }
+        .filter-card { font-family: -apple-system, "Segoe UI", sans-serif; }
+        .sign-block {
+            margin-top: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+            font-family: -apple-system, "Segoe UI", sans-serif; font-size: .92rem;
+        }
+        .sign-block .role { color: #555; margin-bottom: 4px; }
+        .sign-block .line { border-bottom: 1px solid #333; min-width: 200px; display: inline-block; }
         @media print {
             .navbar, .no-print, .btn { display: none !important; }
             body { background: #fff; }
-            .card { box-shadow: none; border: 1px solid #ccc; }
+            .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
             <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
-                <a class="nav-link" th:href="@{/student/results}">Мои результаты</a>
+                <a class="nav-link active" th:href="@{/student/results}">Мои результаты</a>
                 <a class="nav-link" th:href="@{/student/recommendations}">Рекомендации</a>
                 <a class="nav-link" th:href="@{/student/profile}">Профиль</a>
                 <a class="nav-link" th:href="@{/logout}">Выйти</a>
@@ -31,24 +46,17 @@
         </div>
     </nav>
 
-    <div class="container py-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1>📊 Мои результаты</h1>
-                <p class="text-muted">История прохождения тестов</p>
-            </div>
-        </div>
-
+    <!-- Панель фильтрации (не выводится на печать) -->
+    <div class="container-fluid no-print pt-3" style="max-width: 1000px;">
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
         <div th:if="${warning}" class="alert alert-warning" th:text="${warning}"></div>
-
-        <div class="card mb-3 no-print">
-            <div class="card-body">
+        <div class="card filter-card mb-2">
+            <div class="card-body py-3">
                 <form method="get" th:action="@{/student/results}" class="row g-2 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">Уровень стресса</label>
-                        <select name="levelName" class="form-select">
+                        <select name="levelName" class="form-select form-select-sm">
                             <option value="">— Любой —</option>
                             <option th:each="lv : ${levels}"
                                     th:value="${lv.levelName}"
@@ -58,73 +66,101 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">Дата с</label>
-                        <input type="date" name="from" class="form-control" th:value="${from}">
+                        <input type="date" name="from" class="form-control form-control-sm" th:value="${from}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">Дата по</label>
-                        <input type="date" name="to" class="form-control" th:value="${to}">
+                        <input type="date" name="to" class="form-control form-control-sm" th:value="${to}">
                     </div>
                     <div class="col-md-3 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">🔍 Фильтр</button>
-                        <a th:href="@{/student/results}" class="btn btn-outline-secondary">Сброс</a>
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">🔍 Фильтр</button>
+                        <a th:href="@{/student/results}" class="btn btn-outline-secondary btn-sm">Сброс</a>
                     </div>
                 </form>
-                <p th:if="${totalCount != null and results != null and #lists.size(results) != totalCount}"
-                   class="text-muted small mb-0 mt-2">
-                    Показано <span th:text="${#lists.size(results)}">0</span>
-                    из <span th:text="${totalCount}">0</span> результатов.
-                </p>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive" th:if="${results}">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>№</th>
-                                        <th>Тест</th>
-                                        <th>Баллы</th>
-                                        <th>Дата прохождения</th>
-                                        <th>Результат</th>
-                                        <th class="no-print"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="result, iterStat : ${results}">
-                                        <td th:text="${iterStat.count}">1</td>
-                                        <td th:text="${result.test.name}">Название теста</td>
-                                        <td>
-                                            <span class="badge bg-primary" th:text="${result.totalScore}">0</span>
-                                        </td>
-                                        <td th:text="${#temporals.format(result.dateTaken, 'dd.MM.yyyy')}">01.01.2026</td>
-                                        <td th:text="${result.stressLevel != null ? result.stressLevel.name : '—'}">Уровень стресса</td>
-                                        <td class="no-print">
-                                            <a th:href="@{/student/result/{id}(id=${result.id})}" class="btn btn-sm btn-outline-primary">Подробнее</a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="alert alert-info" th:if="${#lists.isEmpty(results)}">
-                            Вы ещё не прошли ни одного теста.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4 no-print">
-            <div class="col-12">
-                <a th:href="@{/student/dashboard}" class="btn btn-primary">Вернуться к тестам</a>
-                <a th:href="@{/student/recommendations}" class="btn btn-outline-primary">Рекомендации</a>
-                <button class="btn btn-outline-secondary" onclick="window.print()">🖨 Распечатать</button>
-            </div>
+        <div class="text-end mb-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Распечатать (PDF)</button>
         </div>
     </div>
+
+    <article class="report" th:with="stu=${(results != null and !#lists.isEmpty(results)) ? results[0].student : null}">
+        <p class="text-center" style="font-size: .9rem; margin-bottom: 2px;">
+            Информационная система «Мониторинг ментального здоровья студентов»
+        </p>
+        <h1>История психодиагностических<br>обследований обучающегося</h1>
+
+        <!-- 1. Сведения об обучающемся -->
+        <h2>1. Сведения об обучающемся</h2>
+        <table class="table table-bordered">
+            <tbody>
+                <tr><th style="width: 40%;">Фамилия, имя, отчество</th>
+                    <td th:text="${stu != null ? stu.fullName : user.login}">—</td></tr>
+                <tr><th>Номер зачётной книжки</th>
+                    <td th:text="${stu != null ? stu.recordBookNumber : '—'}">—</td></tr>
+                <tr><th>Учебная группа</th>
+                    <td th:text="${stu != null ? stu.groupName : '—'}">—</td></tr>
+                <tr><th>Период наблюдения</th>
+                    <td>
+                        <span th:if="${(from == null or from == '') and (to == null or to == '')}">весь период наблюдения</span>
+                        <span th:if="${from != null and from != ''}" th:text="'с ' + ${from}"></span>
+                        <span th:if="${to != null and to != ''}" th:text="' по ' + ${to}"></span>
+                    </td></tr>
+                <tr><th>Дата формирования</th>
+                    <td><strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy HH:mm')}">—</strong></td></tr>
+            </tbody>
+        </table>
+
+        <!-- 2. Перечень протоколов -->
+        <h2>2. Перечень пройденных тестирований</h2>
+        <p style="text-indent: 28px;" th:if="${results == null or #lists.isEmpty(results)}">
+            За указанный период завершённых протоколов тестирования не зафиксировано.
+        </p>
+        <div th:if="${results != null and not #lists.isEmpty(results)}">
+            <table class="table table-bordered">
+                <caption style="caption-side: top;">
+                    Таблица 2.1 — Протоколы тестирования
+                    <span th:if="${totalCount != null and #lists.size(results) != totalCount}"
+                          th:text="'(показано ' + ${#lists.size(results)} + ' из ' + ${totalCount} + ')'"></span>
+                </caption>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">№</th>
+                        <th>Дата и время</th>
+                        <th>Методика</th>
+                        <th style="width: 15%;">Суммарный балл</th>
+                        <th style="width: 20%;">Уровень стресса</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="result, iter : ${results}">
+                        <td th:text="${iter.count}">1</td>
+                        <td th:text="${#temporals.format(result.takenAt, 'dd.MM.yyyy HH:mm')}">—</td>
+                        <td th:text="${result.test != null ? result.test.name : '—'}">—</td>
+                        <td th:text="${result.totalScore}">0</td>
+                        <td th:text="${result.stressLevel != null ? result.stressLevel.name : '—'}">—</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-family: -apple-system, 'Segoe UI', sans-serif; font-size: .85rem; color: #555;">
+                Всего за период: <strong th:text="${#lists.size(results)}">0</strong> протокол(ов).
+                Подробный протокол по каждому обследованию доступен в системе
+                по соответствующей записи.
+            </p>
+        </div>
+
+        <!-- Подписи -->
+        <div class="sign-block">
+            <div>
+                <div class="role">Обучающийся:</div>
+                <div><span class="line"></span> / <span th:text="${stu != null ? stu.fullName : user.login}">—</span> /</div>
+            </div>
+            <div>
+                <div class="role">Дата формирования:</div>
+                <div><strong th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">—</strong></div>
+            </div>
+        </div>
+    </article>
 
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 </body>

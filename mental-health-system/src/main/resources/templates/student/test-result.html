@@ -3,36 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результат теста</title>
+    <title>Протокол тестирования</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #4a90a4 !important; }
-        .result-card { 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 15px;
-            overflow: hidden;
+        body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
+        .navbar { background-color: #4a90a4 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .report {
+            max-width: 1000px; margin: 24px auto; background: #fff;
+            padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
         }
-        .result-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
+        .report h1 { text-align: center; font-size: 1.4rem; font-weight: 700; text-transform: uppercase;
+                     letter-spacing: .5px; margin: 0 0 4px; line-height: 1.4; }
+        .report h2 { font-size: 1.1rem; font-weight: 700; margin-top: 32px;
+                     padding-bottom: 6px; border-bottom: 1px solid #999; }
+        .report table { font-family: -apple-system, "Segoe UI", sans-serif; font-size: .92rem; }
+        .report table th { background: #f0f2f7; font-weight: 600; }
+        .report table td, .report table th { vertical-align: middle; }
+        .score-line { font-size: 1.05rem; }
+        .lvl-badge { font-size: .92rem; padding: .35em .7em; }
+        .conclusion { font-size: 1rem; line-height: 1.7; text-align: justify; text-indent: 28px; margin-top: 12px; }
+        .sign-block {
+            margin-top: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+            font-family: -apple-system, "Segoe UI", sans-serif; font-size: .92rem;
         }
-        .score-display {
-            font-size: 4rem;
-            font-weight: bold;
-        }
-        .btn-primary { background-color: #4a90a4; border-color: #4a90a4; }
+        .sign-block .role { color: #555; margin-bottom: 4px; }
+        .sign-block .line { border-bottom: 1px solid #333; min-width: 200px; display: inline-block; }
         @media print {
             .navbar, .no-print, .btn { display: none !important; }
             body { background: #fff; }
-            .result-card, .card { box-shadow: none; border: 1px solid #ccc; }
-            .result-header { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
+            .lvl-badge { border: 1px solid #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
             <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
             <div class="navbar-nav ms-auto">
@@ -45,65 +50,106 @@
         </div>
     </nav>
 
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="result-card card">
-                    <div class="result-header text-center">
-                        <h1 class="mb-3">Результат тестирования</h1>
-                        <div class="score-display">
-                            <span th:text="${score}">0</span><span th:if="${maxScore != null and maxScore > 0}" th:text="' / ' + ${maxScore}"></span>
-                        </div>
-                        <p class="mb-0">
-                            баллов<span th:if="${percent != null and maxScore != null and maxScore > 0}" th:text="' (' + ${percent} + '%)'"></span>
-                        </p>
-                    </div>
-                    <div class="card-body p-4">
-                        <h4 class="card-title mb-3" th:text="${test.name}">Название теста</h4>
+    <div class="container-fluid no-print py-2 d-flex justify-content-between" style="max-width: 1000px;">
+        <a th:href="@{/student/results}" class="btn btn-outline-secondary btn-sm">← К результатам</a>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Распечатать (PDF)</button>
+    </div>
 
-                        <div class="alert alert-info" th:if="${stressLevel}">
-                            <h5>Уровень стресса: <span th:text="${stressLevel.name}">Уровень</span></h5>
-                            <p class="mb-0" th:if="${maxScore != null and maxScore > 0}">
-                                Балл: <strong th:text="${score}">0</strong> из
-                                <strong th:text="${maxScore}">0</strong>
-                                (<strong th:text="${percent} + '%'">0%</strong> от максимума теста).
-                                Уровень определяется по доле набранных баллов.
-                            </p>
-                            <p class="mb-0 text-muted small" th:if="${maxScore == null or maxScore == 0}">
-                                Уровень определён на основе вашего результата.
-                            </p>
-                        </div>
+    <article class="report">
+        <p class="text-center" style="font-size: .9rem; margin-bottom: 2px;">
+            Информационная система «Мониторинг ментального здоровья студентов»
+        </p>
+        <h1>Протокол<br>психодиагностического тестирования
+            <span th:text="'№ ' + ${result.protocolNumber}">№ 0</span></h1>
 
-                        <div class="mt-4">
-                            <h5>Ваш результат:</h5>
-                            <p>Вы набрали <strong th:text="${score}">0</strong> баллов.</p>
-                            <p th:if="${result != null}" class="text-muted mb-0">
-                                Дата прохождения:
-                                <span th:text="${#temporals.format(result.dateTaken, 'dd.MM.yyyy')}"></span>
-                            </p>
-                        </div>
+        <!-- 1. Сведения об обучающемся -->
+        <h2>1. Сведения об обучающемся</h2>
+        <table class="table table-bordered">
+            <tbody>
+                <tr><th style="width: 40%;">Фамилия, имя, отчество</th>
+                    <td th:text="${student.fullName}">—</td></tr>
+                <tr><th>Номер зачётной книжки</th>
+                    <td th:text="${student.recordBookNumber}">—</td></tr>
+                <tr><th>Учебная группа</th>
+                    <td th:text="${student.groupName}">—</td></tr>
+            </tbody>
+        </table>
 
-                        <div class="mt-4" th:if="${recommendations != null}">
-                            <h5>💡 Рекомендации</h5>
-                            <ol th:if="${not #lists.isEmpty(recommendations)}">
-                                <li th:each="rec : ${recommendations}" class="mb-2"
-                                    th:text="${rec.recommendationText}"></li>
-                            </ol>
-                            <div th:if="${#lists.isEmpty(recommendations)}" class="alert alert-secondary">
-                                Рекомендации для этого уровня стресса пока не заданы.
-                            </div>
-                        </div>
+        <!-- 2. Сведения о методике -->
+        <h2>2. Сведения о применённой методике</h2>
+        <table class="table table-bordered">
+            <tbody>
+                <tr><th style="width: 40%;">Шифр методики</th>
+                    <td><code th:text="${test.testCode}">—</code></td></tr>
+                <tr><th>Наименование методики</th>
+                    <td th:text="${test.name}">—</td></tr>
+                <tr><th>Дата и время прохождения</th>
+                    <td><strong th:text="${#temporals.format(result.takenAt, 'dd.MM.yyyy HH:mm')}">—</strong></td></tr>
+            </tbody>
+        </table>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4 no-print">
-                            <button class="btn btn-outline-primary" onclick="window.print()">🖨 Распечатать</button>
-                            <a th:href="@{/student/dashboard}" class="btn btn-primary">Вернуться к тестам</a>
-                            <a th:href="@{/student/results}" class="btn btn-outline-secondary">Все результаты</a>
-                        </div>
-                    </div>
-                </div>
+        <!-- 3. Результаты -->
+        <h2>3. Результаты тестирования</h2>
+        <table class="table table-bordered">
+            <tbody>
+                <tr><th style="width: 40%;">Суммарный балл</th>
+                    <td class="score-line">
+                        <strong th:text="${score}">0</strong>
+                        <span th:if="${maxScore != null and maxScore > 0}"
+                              th:text="' из ' + ${maxScore} + ' возможных (' + ${percent} + ' %)'"></span>
+                    </td></tr>
+                <tr><th>Уровень стресса</th>
+                    <td>
+                        <span class="badge lvl-badge"
+                              th:classappend="${stressLevel != null ? (stressLevel.name == 'Низкий' ? 'bg-success' : (stressLevel.name == 'Средний' ? 'bg-warning text-dark' : (stressLevel.name == 'Высокий' ? 'bg-danger' : 'bg-dark'))) : 'bg-secondary'}"
+                              th:text="${stressLevel != null ? stressLevel.name : 'не определён'}">—</span>
+                        <span class="text-muted small" th:if="${maxScore != null and maxScore > 0}">
+                            (определяется по доле набранных баллов от максимума методики)
+                        </span>
+                    </td></tr>
+                <tr><th>Статус прохождения</th>
+                    <td th:text="${result.status != null ? result.status.statusName : 'Завершён'}">Завершён</td></tr>
+            </tbody>
+        </table>
+
+        <!-- 4. Рекомендации -->
+        <h2>4. Рекомендации по результатам</h2>
+        <div th:if="${recommendations != null and not #lists.isEmpty(recommendations)}">
+            <p style="text-indent: 28px;">
+                По итогам тестирования и в соответствии с определённым уровнем стресса
+                обучающемуся предлагаются следующие рекомендации:
+            </p>
+            <ol>
+                <li th:each="rec : ${recommendations}" class="mb-2" th:text="${rec.recommendationText}"></li>
+            </ol>
+        </div>
+        <p style="text-indent: 28px;"
+           th:if="${recommendations == null or #lists.isEmpty(recommendations)}">
+            Для определённого уровня стресса рекомендации в системе не заданы.
+            При необходимости обратитесь к психологу-куратору.
+        </p>
+
+        <!-- 5. Заключение -->
+        <h2>5. Заключение</h2>
+        <p class="conclusion">
+            Настоящий протокол сформирован информационной системой автоматически
+            на основании ответов обучающегося. Уровень стресса определён по доле
+            набранных баллов от максимально возможного результата методики.
+            Протокол носит скрининговый характер и не является клиническим диагнозом.
+        </p>
+
+        <!-- Подписи -->
+        <div class="sign-block">
+            <div>
+                <div class="role">Тестирование проведено в режиме:</div>
+                <div><strong>автоматическом (самотестирование)</strong></div>
+            </div>
+            <div>
+                <div class="role">Психолог-куратор:</div>
+                <div><span class="line"></span></div>
             </div>
         </div>
-    </div>
+    </article>
 
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 </body>

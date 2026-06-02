@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал аудита</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #2c3e50 !important; }
+        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #2c3e50; border-color: #2c3e50; }
+        table td, table th { vertical-align: middle; font-size: .9rem; }
+        code.tbl { color: #6f42c1; }
+        .op-INSERT { color: #198754; font-weight: 600; }
+        .op-UPDATE { color: #fd7e14; font-weight: 600; }
+        .op-DELETE { color: #dc3545; font-weight: 600; }
+        .details-cell { max-width: 360px; white-space: pre-wrap; word-break: break-word; color: #555; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" th:href="@{/admin/dashboard}">🧠 Психотестирование</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/admin/dashboard}">Панель управления</a>
+                <a class="nav-link" th:href="@{/admin/users}">Пользователи</a>
+                <a class="nav-link" th:href="@{/admin/tests}">Тесты</a>
+                <a class="nav-link" th:href="@{/admin/tables}">Таблицы</a>
+                <a class="nav-link" th:href="@{/admin/statistics}">Статистика</a>
+                <a class="nav-link active" th:href="@{/admin/audit}">Журнал аудита</a>
+                <a class="nav-link" th:href="@{/logout}">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="mb-4">
+            <h1>📋 Журнал аудита</h1>
+            <p class="text-muted mb-0">
+                Автоматический протокол изменений в базе данных (операции INSERT / UPDATE / DELETE
+                над справочниками и тестами). Всего записей:
+                <strong th:text="${totalCount}">0</strong>.
+            </p>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" th:action="@{/admin/audit}" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Пользователь (логин)</label>
+                        <input type="text" name="login" class="form-control form-control-sm"
+                               th:value="${fLogin}" placeholder="например, admin">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Таблица</label>
+                        <select name="table" class="form-select form-select-sm">
+                            <option value="">— Любая —</option>
+                            <option th:each="t : ${tables}" th:value="${t}" th:text="${t}"
+                                    th:selected="${fTable != null and fTable == t}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Дата с</label>
+                        <input type="date" name="from" class="form-control form-control-sm" th:value="${from}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">Дата по</label>
+                        <input type="date" name="to" class="form-control form-control-sm" th:value="${to}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">🔍 Фильтр</button>
+                        <a th:href="@{/admin/audit}" class="btn btn-outline-secondary btn-sm">Сброс</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Таблица записей -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">№</th>
+                                <th style="width: 16%;">Дата и время</th>
+                                <th style="width: 14%;">Пользователь</th>
+                                <th style="width: 12%;">Операция</th>
+                                <th style="width: 18%;">Таблица</th>
+                                <th>Детали</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="a : ${logs}">
+                                <td th:text="${a.auditNumber}">1</td>
+                                <td th:text="${a.actionTime != null ? #temporals.format(a.actionTime, 'dd.MM.yyyy HH:mm:ss') : '—'}">—</td>
+                                <td th:text="${a.login != null ? a.login : '—'}">—</td>
+                                <td><span th:classappend="'op-' + ${a.operation}" th:text="${a.operation}">—</span></td>
+                                <td><code class="tbl" th:text="${a.tableName}">—</code></td>
+                                <td class="details-cell" th:text="${a.details != null ? a.details : '—'}">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3 mb-0" th:if="${#lists.isEmpty(logs)}">
+                    Записи журнала аудита, удовлетворяющие условиям фильтра, не найдены.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
