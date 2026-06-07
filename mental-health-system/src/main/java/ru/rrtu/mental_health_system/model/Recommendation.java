@@ -3,11 +3,8 @@ package ru.rrtu.mental_health_system.model;
 import jakarta.persistence.*;
 
 /**
- * Рекомендация для определённого уровня стресса.
- *
- * Согласно проектировке (см. ПЗ, таблица «recommendations»),
- * первичный ключ — естественный «Код рекомендации».
- * Дополнительный внешний ключ — автор-психолог (author_personnel_number).
+ * Рекомендация для определённой градации показателя (таблица «recommendations»).
+ * Первичный ключ — «Код рекомендации». Внешние ключи: градация и автор-психолог.
  */
 @Entity
 @Table(name = "recommendations")
@@ -19,8 +16,8 @@ public class Recommendation {
     private Long recommendationCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "level_name", nullable = false)
-    private StressLevel stressLevel;
+    @JoinColumn(name = "grade_name", nullable = false)
+    private Grade grade;
 
     @Column(name = "recommendation_text", nullable = false, columnDefinition = "TEXT")
     private String recommendationText;
@@ -36,12 +33,15 @@ public class Recommendation {
     public Long getRecommendationCode() { return recommendationCode; }
     public void setRecommendationCode(Long c) { this.recommendationCode = c; }
 
-    /** Алиас id == recommendationCode. */
     public Long getId() { return recommendationCode; }
     public void setId(Long id) { this.recommendationCode = id; }
 
-    public StressLevel getStressLevel() { return stressLevel; }
-    public void setStressLevel(StressLevel sl) { this.stressLevel = sl; }
+    public Grade getGrade() { return grade; }
+    public void setGrade(Grade g) { this.grade = g; }
+
+    /** Алиасы для совместимости (stressLevel). */
+    public Grade getStressLevel() { return grade; }
+    public void setStressLevel(Grade g) { this.grade = g; }
 
     public String getRecommendationText() { return recommendationText; }
     public void setRecommendationText(String s) { this.recommendationText = s; }

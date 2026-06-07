@@ -98,7 +98,7 @@ public class StudentController {
         }
 
         int maxPossible = testService.getMaxPossibleScore(testCode);
-        StressLevel stressLevel = testService.getStressLevelForResult(totalScore, maxPossible);
+        Grade stressLevel = testService.getStressLevelForResult(totalScore, maxPossible);
 
         Student student = studentRepository.findByLogin(user.getLogin());
         if (student == null) {

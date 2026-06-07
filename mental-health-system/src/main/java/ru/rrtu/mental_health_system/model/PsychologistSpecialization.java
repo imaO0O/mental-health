@@ -3,12 +3,9 @@ package ru.rrtu.mental_health_system.model;
 import jakarta.persistence.*;
 
 /**
- * Специализация психолога на категории тестов.
- *
- * Junction-таблица для связи M:N «Специализируется» между
- * Психологами и Категориями тестов. Первичный ключ — составной
- * (Табельный номер + Название категории), как в ПЗ образца
- * (manager_specializations).
+ * Специализация психолога на показателе (таблица «psychologist_specializations»).
+ * Junction-таблица связи M:N «Специализируется» между Психологами и
+ * Показателями. Первичный ключ — составной (Табельный номер + Название показателя).
  */
 @Entity
 @Table(name = "psychologist_specializations")
@@ -22,19 +19,23 @@ public class PsychologistSpecialization {
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_name", nullable = false)
-    private TestCategory category;
+    @JoinColumn(name = "indicator_name", nullable = false)
+    private Indicator indicator;
 
     public PsychologistSpecialization() {}
 
-    public PsychologistSpecialization(Psychologist psychologist, TestCategory category) {
+    public PsychologistSpecialization(Psychologist psychologist, Indicator indicator) {
         this.psychologist = psychologist;
-        this.category = category;
+        this.indicator = indicator;
     }
 
     public Psychologist getPsychologist() { return psychologist; }
     public void setPsychologist(Psychologist psychologist) { this.psychologist = psychologist; }
 
-    public TestCategory getCategory() { return category; }
-    public void setCategory(TestCategory category) { this.category = category; }
+    public Indicator getIndicator() { return indicator; }
+    public void setIndicator(Indicator indicator) { this.indicator = indicator; }
+
+    /** Алиасы для совместимости (category). */
+    public Indicator getCategory() { return indicator; }
+    public void setCategory(Indicator indicator) { this.indicator = indicator; }
 }

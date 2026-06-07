@@ -4,29 +4,26 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Композитный первичный ключ для junction-таблицы «Специализации психологов»:
- * (Табельный номер психолога, Название категории тестов).
- *
- * Это единственная таблица в проекте с составным PK — по аналогии с
- * manager_specializations из образца ПЗ.
+ * Составной первичный ключ junction-таблицы «Специализации психологов»:
+ * (Табельный номер психолога, Название показателя).
  */
 public class PsychologistSpecializationId implements Serializable {
 
-    private Long psychologist;       // personnel_number
-    private String category;         // category_name
+    private Long psychologist;   // personnel_number
+    private String indicator;    // indicator_name
 
     public PsychologistSpecializationId() {}
 
-    public PsychologistSpecializationId(Long psychologist, String category) {
+    public PsychologistSpecializationId(Long psychologist, String indicator) {
         this.psychologist = psychologist;
-        this.category = category;
+        this.indicator = indicator;
     }
 
     public Long getPsychologist() { return psychologist; }
     public void setPsychologist(Long psychologist) { this.psychologist = psychologist; }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public String getIndicator() { return indicator; }
+    public void setIndicator(String indicator) { this.indicator = indicator; }
 
     @Override
     public boolean equals(Object o) {
@@ -34,11 +31,11 @@ public class PsychologistSpecializationId implements Serializable {
         if (!(o instanceof PsychologistSpecializationId)) return false;
         PsychologistSpecializationId that = (PsychologistSpecializationId) o;
         return Objects.equals(psychologist, that.psychologist)
-                && Objects.equals(category, that.category);
+                && Objects.equals(indicator, that.indicator);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(psychologist, category);
+        return Objects.hash(psychologist, indicator);
     }
 }

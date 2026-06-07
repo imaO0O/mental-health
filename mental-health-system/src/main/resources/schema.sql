@@ -1,7 +1,12 @@
 -- =====================================================================
 -- Схема БД «Мониторинг ментального здоровья» (PostgreSQL).
--- Все первичные ключи — естественные (см. ПЗ, разделы 2.1.2 и 2.2.2).
--- Единственная junction-таблица с составным PK — psychologist_specializations.
+-- Модель данных согласно ПЗ (разделы 2.1–2.2): 16 таблиц,
+-- естественные первичные ключи, НФБК.
+--   Показатель (indicators)  — измеряемая характеристика (Стресс, Тревога…)
+--   Градация   (grades)      — степень выраженности по доле баллов (Низкий…)
+--   Кураторство              — students.curator_personnel_number
+--   Консультация / Заметка по тестированию — отдельные слабые сущности.
+-- Junction-таблицы с составным PK: psychologist_specializations, item_results.
 -- =====================================================================
 
 -- 1. Роли пользователей
@@ -18,45 +23,15 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Студенты
-CREATE TABLE IF NOT EXISTS students (
-    record_book_number BIGINT PRIMARY KEY,
-    login VARCHAR(50) NOT NULL UNIQUE REFERENCES users(login) ON DELETE CASCADE,
-    last_name VARCHAR(50) NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    middle_name VARCHAR(50),
-    group_name VARCHAR(20) NOT NULL,
-    email VARCHAR(100),
-    phone VARCHAR(20)
-);
-
--- 4. Психологи
-CREATE TABLE IF NOT EXISTS psychologists (
-    personnel_number BIGINT PRIMARY KEY,
-    login VARCHAR(50) NOT NULL UNIQUE REFERENCES users(login) ON DELETE CASCADE,
-    last_name VARCHAR(50) NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    middle_name VARCHAR(50),
-    position VARCHAR(100),
-    email VARCHAR(100),
-    phone VARCHAR(20)
-);
-
--- 5. Категории тестов
-CREATE TABLE IF NOT EXISTS test_categories (
-    category_name VARCHAR(50) PRIMARY KEY,
+-- 3. Показатели психодиагностики (Стресс, Тревога, Депрессия, Выгорание)
+CREATE TABLE IF NOT EXISTS indicators (
+    indicator_name VARCHAR(50) PRIMARY KEY,
     description TEXT
 );
 
--- 6. Статусы прохождения теста
-CREATE TABLE IF NOT EXISTS result_statuses (
-    status_name VARCHAR(30) PRIMARY KEY,
-    description TEXT
-);
-
--- 7. Уровни стресса
-CREATE TABLE IF NOT EXISTS stress_levels (
-    level_name VARCHAR(30) PRIMARY KEY,
+-- 4. Градации выраженности показателя (по доле баллов от максимума)
+CREATE TABLE IF NOT EXISTS grades (
+    grade_name VARCHAR(30) PRIMARY KEY,
     min_percent SMALLINT NOT NULL,
     max_percent SMALLINT NOT NULL,
     CHECK (min_percent >= 0 AND min_percent <= 100),
@@ -64,18 +39,45 @@ CREATE TABLE IF NOT EXISTS stress_levels (
     CHECK (min_percent <= max_percent)
 );
 
--- 8. Тесты
+-- 5. Психологи
+CREATE TABLE IF NOT EXISTS psychologists (
+    personnel_number BIGINT PRIMARY KEY,
+    login VARCHAR(50) NOT NULL UNIQUE REFERENCES users(login) ON DELETE CASCADE,
+    last_name VARCHAR(50) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
+    specialization VARCHAR(100),
+    email VARCHAR(100),
+    phone VARCHAR(20)
+);
+
+-- 6. Студенты (с куратором, психотипом и группой риска)
+CREATE TABLE IF NOT EXISTS students (
+    record_book_number BIGINT PRIMARY KEY,
+    login VARCHAR(50) NOT NULL UNIQUE REFERENCES users(login) ON DELETE CASCADE,
+    last_name VARCHAR(50) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
+    group_name VARCHAR(20) NOT NULL,
+    psych_type VARCHAR(50),
+    risk_group VARCHAR(20),
+    curator_personnel_number BIGINT REFERENCES psychologists(personnel_number) ON DELETE SET NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20)
+);
+
+-- 7. Тесты (методики); измеряют показатель, имеют автора-психолога
 CREATE TABLE IF NOT EXISTS tests (
     test_code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     description TEXT,
-    instructions TEXT,
+    instruction TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     author_personnel_number BIGINT REFERENCES psychologists(personnel_number),
-    category_name VARCHAR(50) REFERENCES test_categories(category_name)
+    indicator_name VARCHAR(50) REFERENCES indicators(indicator_name)
 );
 
--- 9. Вопросы
+-- 8. Вопросы
 CREATE TABLE IF NOT EXISTS questions (
     question_number BIGSERIAL PRIMARY KEY,
     test_code VARCHAR(20) NOT NULL REFERENCES tests(test_code) ON DELETE CASCADE,
@@ -83,7 +85,7 @@ CREATE TABLE IF NOT EXISTS questions (
     order_number SMALLINT NOT NULL
 );
 
--- 10. Варианты ответов
+-- 9. Варианты ответов
 CREATE TABLE IF NOT EXISTS answers (
     answer_code BIGSERIAL PRIMARY KEY,
     question_number BIGINT NOT NULL REFERENCES questions(question_number) ON DELETE CASCADE,
@@ -92,46 +94,54 @@ CREATE TABLE IF NOT EXISTS answers (
     order_number SMALLINT NOT NULL
 );
 
--- 11. Протоколы тестирования
+-- 10. Протоколы тестирования (заключение — градация)
 CREATE TABLE IF NOT EXISTS test_protocols (
     protocol_number BIGSERIAL PRIMARY KEY,
     record_book_number BIGINT NOT NULL REFERENCES students(record_book_number) ON DELETE CASCADE,
     test_code VARCHAR(20) NOT NULL REFERENCES tests(test_code),
     taken_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     total_score SMALLINT NOT NULL CHECK (total_score >= 0),
-    level_name VARCHAR(30) REFERENCES stress_levels(level_name),
-    status_name VARCHAR(30) REFERENCES result_statuses(status_name)
+    grade_name VARCHAR(30) REFERENCES grades(grade_name)
 );
 
--- 12. Ответы пользователя
-CREATE TABLE IF NOT EXISTS result_answers (
-    response_number BIGSERIAL PRIMARY KEY,
+-- 11. Результат по пункту (составной PK: протокол + вопрос)
+CREATE TABLE IF NOT EXISTS item_results (
     protocol_number BIGINT NOT NULL REFERENCES test_protocols(protocol_number) ON DELETE CASCADE,
     question_number BIGINT NOT NULL REFERENCES questions(question_number),
-    answer_code BIGINT NOT NULL REFERENCES answers(answer_code)
+    answer_code BIGINT NOT NULL REFERENCES answers(answer_code),
+    PRIMARY KEY (protocol_number, question_number)
 );
 
--- 13. Рекомендации
+-- 12. Рекомендации (привязаны к градации, имеют автора)
 CREATE TABLE IF NOT EXISTS recommendations (
     recommendation_code BIGSERIAL PRIMARY KEY,
-    level_name VARCHAR(30) NOT NULL REFERENCES stress_levels(level_name),
+    grade_name VARCHAR(30) NOT NULL REFERENCES grades(grade_name),
     recommendation_text TEXT NOT NULL,
     order_number SMALLINT,
     author_personnel_number BIGINT REFERENCES psychologists(personnel_number)
 );
 
--- 14. Специализации психологов (junction M:N)
+-- 13. Специализации психологов (junction M:N: психолог × показатель)
 CREATE TABLE IF NOT EXISTS psychologist_specializations (
     personnel_number BIGINT NOT NULL REFERENCES psychologists(personnel_number) ON DELETE CASCADE,
-    category_name VARCHAR(50) NOT NULL REFERENCES test_categories(category_name) ON DELETE CASCADE,
-    PRIMARY KEY (personnel_number, category_name)
+    indicator_name VARCHAR(50) NOT NULL REFERENCES indicators(indicator_name) ON DELETE CASCADE,
+    PRIMARY KEY (personnel_number, indicator_name)
 );
 
--- 15. Заметки психолога
-CREATE TABLE IF NOT EXISTS psychologist_notes (
-    note_number BIGSERIAL PRIMARY KEY,
+-- 14. Консультации (датированные беседы психолог × студент)
+CREATE TABLE IF NOT EXISTS consultations (
+    consultation_number BIGSERIAL PRIMARY KEY,
     personnel_number BIGINT NOT NULL REFERENCES psychologists(personnel_number) ON DELETE CASCADE,
     record_book_number BIGINT NOT NULL REFERENCES students(record_book_number) ON DELETE CASCADE,
+    consultation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    consultation_text TEXT
+);
+
+-- 15. Заметки по тестированию (привязаны к протоколу)
+CREATE TABLE IF NOT EXISTS test_notes (
+    note_number BIGSERIAL PRIMARY KEY,
+    personnel_number BIGINT NOT NULL REFERENCES psychologists(personnel_number) ON DELETE CASCADE,
+    protocol_number BIGINT NOT NULL REFERENCES test_protocols(protocol_number) ON DELETE CASCADE,
     note_date DATE NOT NULL DEFAULT CURRENT_DATE,
     note_text TEXT NOT NULL
 );
@@ -150,33 +160,32 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- Индексы
 -- =====================================================================
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_name);
+CREATE INDEX IF NOT EXISTS idx_students_curator ON students(curator_personnel_number);
 CREATE INDEX IF NOT EXISTS idx_protocols_student ON test_protocols(record_book_number);
 CREATE INDEX IF NOT EXISTS idx_protocols_test ON test_protocols(test_code);
 CREATE INDEX IF NOT EXISTS idx_protocols_taken_at ON test_protocols(taken_at);
 CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_code);
 CREATE INDEX IF NOT EXISTS idx_answers_question ON answers(question_number);
-CREATE INDEX IF NOT EXISTS idx_result_answers_protocol ON result_answers(protocol_number);
-CREATE INDEX IF NOT EXISTS idx_recommendations_level ON recommendations(level_name);
-CREATE INDEX IF NOT EXISTS idx_notes_student ON psychologist_notes(record_book_number);
-CREATE INDEX IF NOT EXISTS idx_notes_psychologist ON psychologist_notes(personnel_number);
+CREATE INDEX IF NOT EXISTS idx_item_results_protocol ON item_results(protocol_number);
+CREATE INDEX IF NOT EXISTS idx_recommendations_grade ON recommendations(grade_name);
+CREATE INDEX IF NOT EXISTS idx_tests_indicator ON tests(indicator_name);
+CREATE INDEX IF NOT EXISTS idx_consultations_student ON consultations(record_book_number);
+CREATE INDEX IF NOT EXISTS idx_consultations_psy ON consultations(personnel_number);
+CREATE INDEX IF NOT EXISTS idx_notes_protocol ON test_notes(protocol_number);
+CREATE INDEX IF NOT EXISTS idx_notes_psychologist ON test_notes(personnel_number);
 CREATE INDEX IF NOT EXISTS idx_audit_login ON audit_log(login);
 CREATE INDEX IF NOT EXISTS idx_audit_table ON audit_log(table_name);
 
 -- =====================================================================
--- Доп. ограничения целостности
+-- Доп. ограничения целостности (UNIQUE)
 -- =====================================================================
 CREATE UNIQUE INDEX IF NOT EXISTS uq_question_test_order
     ON questions(test_code, order_number);
-
 CREATE UNIQUE INDEX IF NOT EXISTS uq_answer_question_order
     ON answers(question_number, order_number);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_protocol_question
-    ON result_answers(protocol_number, question_number);
-
 CREATE UNIQUE INDEX IF NOT EXISTS uq_tests_name ON tests(name);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_recommendations_level_text
-    ON recommendations(level_name, recommendation_text);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_recommendations_grade_text
+    ON recommendations(grade_name, recommendation_text);
 
 -- =====================================================================
 -- Представление: динамика результатов студентов
@@ -190,8 +199,7 @@ SELECT
     t.name AS test_name,
     p.taken_at,
     p.total_score,
-    p.level_name,
-    p.status_name
+    p.grade_name
 FROM test_protocols p
 JOIN students s ON s.record_book_number = p.record_book_number
 JOIN tests t ON t.test_code = p.test_code

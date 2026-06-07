@@ -3,11 +3,9 @@ package ru.rrtu.mental_health_system.model;
 import jakarta.persistence.*;
 
 /**
- * Психологический тест.
- *
- * Согласно проектировке (см. ПЗ, таблица «tests»),
- * первичный ключ — естественный: шифр теста (PSS-10, BDI, STAI, BAI и т. д.).
- * Дополнительные внешние ключи: автор (психолог) и категория тестов.
+ * Психологический тест (методика) — таблица «tests».
+ * Первичный ключ — шифр теста. Внешние ключи: автор-психолог и
+ * измеряемый показатель (indicator_name).
  */
 @Entity
 @Table(name = "tests")
@@ -23,8 +21,8 @@ public class Test {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "instructions", columnDefinition = "TEXT")
-    private String instructions;
+    @Column(name = "instruction", columnDefinition = "TEXT")
+    private String instruction;
 
     @Column(name = "is_active")
     private Boolean isActive;
@@ -34,10 +32,10 @@ public class Test {
     @JoinColumn(name = "author_personnel_number")
     private Psychologist author;
 
-    /** Категория теста (FK на category_name). */
+    /** Измеряемый показатель (FK на indicator_name). */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_name")
-    private TestCategory category;
+    @JoinColumn(name = "indicator_name")
+    private Indicator indicator;
 
     @PrePersist
     protected void onCreate() {
@@ -47,7 +45,7 @@ public class Test {
     public String getTestCode() { return testCode; }
     public void setTestCode(String testCode) { this.testCode = testCode; }
 
-    /** Алиас «id» == testCode для обратной совместимости. */
+    /** Алиас «id» == testCode. */
     public String getId() { return testCode; }
     public void setId(String id) { this.testCode = id; }
 
@@ -57,8 +55,12 @@ public class Test {
     public String getDescription() { return description; }
     public void setDescription(String s) { this.description = s; }
 
-    public String getInstructions() { return instructions; }
-    public void setInstructions(String s) { this.instructions = s; }
+    public String getInstruction() { return instruction; }
+    public void setInstruction(String s) { this.instruction = s; }
+
+    /** Алиасы для совместимости (instructions). */
+    public String getInstructions() { return instruction; }
+    public void setInstructions(String s) { this.instruction = s; }
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean a) { this.isActive = a; }
@@ -66,6 +68,10 @@ public class Test {
     public Psychologist getAuthor() { return author; }
     public void setAuthor(Psychologist a) { this.author = a; }
 
-    public TestCategory getCategory() { return category; }
-    public void setCategory(TestCategory c) { this.category = c; }
+    public Indicator getIndicator() { return indicator; }
+    public void setIndicator(Indicator i) { this.indicator = i; }
+
+    /** Алиасы для совместимости (category). */
+    public Indicator getCategory() { return indicator; }
+    public void setCategory(Indicator i) { this.indicator = i; }
 }

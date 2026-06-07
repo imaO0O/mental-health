@@ -8,13 +8,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Создаёт PL/pgSQL-функции, триггеры и хранимые процедуры
- * после инициализации схемы БД.
- *
- * Все имена колонок согласованы с новой схемой (естественные ключи):
- *   - tests.test_code  (вместо test_id)
- *   - test_protocols.protocol_number, record_book_number, level_name, status_name
- *   - questions.question_number, answers.answer_code и т. д.
+ * Создаёт PL/pgSQL-функции, триггеры и хранимые процедуры после
+ * инициализации схемы БД. Имена согласованы с моделью данных из ПЗ:
+ *   grades(grade_name), indicators(indicator_name),
+ *   test_protocols(grade_name), recommendations(grade_name),
+ *   item_results, test_notes(protocol_number), consultations,
+ *   students(curator_personnel_number), tests(instruction, indicator_name).
  */
 @Component
 @Order(0)
@@ -31,15 +30,15 @@ public class DbProceduresInitializer {
     public void init() {
         log.info("DbProceduresInitializer: создание PL/pgSQL-функций, триггеров и процедур...");
 
-        // --- Триггер 1: валидация протокола тестирования ---
+        // --- Триггер 1: валидация протокола тестирования (градация, балл, дата) ---
         exec("""
-            CREATE OR REPLACE FUNCTION trg_check_protocol_score()
+            CREATE OR REPLACE FUNCTION trg_check_test_protocol_score()
             RETURNS TRIGGER AS $$
             BEGIN
-                IF NEW.level_name IS NOT NULL AND NOT EXISTS (
-                    SELECT 1 FROM stress_levels WHERE level_name = NEW.level_name
+                IF NEW.grade_name IS NOT NULL AND NOT EXISTS (
+                    SELECT 1 FROM grades WHERE grade_name = NEW.grade_name
                 ) THEN
-                    RAISE EXCEPTION 'Уровень стресса % не найден', NEW.level_name;
+                    RAISE EXCEPTION 'Градация % не найдена', NEW.grade_name;
                 END IF;
                 IF NEW.total_score < 0 THEN
                     RAISE EXCEPTION 'Балл не может быть отрицательным: %', NEW.total_score;
@@ -55,7 +54,7 @@ public class DbProceduresInitializer {
         exec("""
             CREATE TRIGGER test_protocols_score_check
                 BEFORE INSERT OR UPDATE ON test_protocols
-                FOR EACH ROW EXECUTE FUNCTION trg_check_protocol_score()
+                FOR EACH ROW EXECUTE FUNCTION trg_check_test_protocol_score()
             """);
 
         // --- Триггер 2: автоподстановка order_number в вопросах ---
@@ -104,14 +103,11 @@ public class DbProceduresInitializer {
             RETURNS TRIGGER AS $$
             DECLARE v_count BIGINT;
             BEGIN
-                IF TG_OP = 'DELETE' THEN
-                    SELECT COUNT(*) INTO v_count FROM test_protocols WHERE test_code = OLD.test_code;
-                    IF v_count > 0 THEN
-                        RAISE EXCEPTION 'Нельзя удалить тест, по которому есть % протоколов', v_count;
-                    END IF;
-                    RETURN OLD;
+                SELECT COUNT(*) INTO v_count FROM test_protocols WHERE test_code = OLD.test_code;
+                IF v_count > 0 THEN
+                    RAISE EXCEPTION 'Нельзя удалить тест, по которому есть % протоколов', v_count;
                 END IF;
-                RETURN NEW;
+                RETURN OLD;
             END;
             $$ LANGUAGE plpgsql
             """);
@@ -122,14 +118,14 @@ public class DbProceduresInitializer {
                 FOR EACH ROW EXECUTE FUNCTION trg_protect_test_with_protocols()
             """);
 
-        // --- Функция: расчёт уровня стресса по проценту от максимума ---
+        // --- Функция: расчёт названия градации по проценту от максимума ---
         exec("""
-            CREATE OR REPLACE FUNCTION fn_get_stress_level(p_percent SMALLINT)
+            CREATE OR REPLACE FUNCTION fn_get_grade(p_percent SMALLINT)
             RETURNS VARCHAR AS $$
             DECLARE v_name VARCHAR;
             BEGIN
-                SELECT level_name INTO v_name
-                  FROM stress_levels
+                SELECT grade_name INTO v_name
+                  FROM grades
                  WHERE p_percent BETWEEN min_percent AND max_percent
                  ORDER BY min_percent LIMIT 1;
                 RETURN v_name;
@@ -137,7 +133,7 @@ public class DbProceduresInitializer {
             $$ LANGUAGE plpgsql STABLE
             """);
 
-        // --- Процедура: сохранение протокола тестирования ---
+        // --- Процедура: атомарное сохранение протокола + определение градации ---
         exec("""
             CREATE OR REPLACE PROCEDURE sp_save_test_protocol(
                 p_record_book_number BIGINT,
@@ -147,21 +143,21 @@ public class DbProceduresInitializer {
                 OUT p_protocol_number BIGINT) AS $$
             DECLARE
                 v_percent SMALLINT;
-                v_level_name VARCHAR;
+                v_grade_name VARCHAR;
             BEGIN
                 IF p_max_score IS NULL OR p_max_score = 0 THEN
                     v_percent := 0;
                 ELSE
                     v_percent := ROUND(p_total_score * 100.0 / p_max_score)::SMALLINT;
                 END IF;
-                v_level_name := fn_get_stress_level(v_percent);
-                IF v_level_name IS NULL THEN
-                    RAISE EXCEPTION 'Не удалось определить уровень стресса для % процентов', v_percent;
+                v_grade_name := fn_get_grade(v_percent);
+                IF v_grade_name IS NULL THEN
+                    RAISE EXCEPTION 'Не удалось определить градацию для % процентов', v_percent;
                 END IF;
                 INSERT INTO test_protocols(record_book_number, test_code, taken_at,
-                                           total_score, level_name, status_name)
+                                           total_score, grade_name)
                     VALUES (p_record_book_number, p_test_code, CURRENT_TIMESTAMP,
-                            p_total_score, v_level_name, 'Завершён')
+                            p_total_score, v_grade_name)
                     RETURNING protocol_number INTO p_protocol_number;
             END;
             $$ LANGUAGE plpgsql
@@ -181,14 +177,112 @@ public class DbProceduresInitializer {
             $$ LANGUAGE plpgsql
             """);
 
+        // --- Процедура: регистрация студента (user + профиль за один шаг) ---
+        exec("""
+            CREATE OR REPLACE PROCEDURE sp_register_student(
+                p_login VARCHAR,
+                p_password_hash VARCHAR,
+                p_record_book_number BIGINT,
+                p_last_name VARCHAR,
+                p_first_name VARCHAR,
+                p_middle_name VARCHAR,
+                p_group_name VARCHAR) AS $$
+            BEGIN
+                INSERT INTO users(login, password_hash, role_name, created_at)
+                VALUES (p_login, p_password_hash, 'STUDENT', CURRENT_TIMESTAMP);
+                INSERT INTO students(record_book_number, login, last_name, first_name,
+                                     middle_name, group_name, risk_group)
+                VALUES (p_record_book_number, p_login, p_last_name, p_first_name,
+                        p_middle_name, p_group_name, 'нет');
+                CALL sp_audit_log(p_login, 'INSERT', 'students',
+                    'Регистрация студента ' || p_last_name || ' ' || p_first_name);
+            END;
+            $$ LANGUAGE plpgsql
+            """);
+
+        // --- Процедуры администрирования тестов (с проверками целостности) ---
+        exec("""
+            CREATE OR REPLACE PROCEDURE sp_admin_create_test(
+                p_test_code VARCHAR, p_name VARCHAR, p_description TEXT,
+                p_instruction TEXT, p_author BIGINT, p_indicator VARCHAR) AS $$
+            BEGIN
+                INSERT INTO tests(test_code, name, description, instruction,
+                                  is_active, author_personnel_number, indicator_name)
+                VALUES (p_test_code, p_name, p_description, p_instruction,
+                        TRUE, p_author, p_indicator);
+                CALL sp_audit_log(NULL, 'INSERT', 'tests', 'Создан тест ' || p_test_code);
+            END;
+            $$ LANGUAGE plpgsql
+            """);
+        exec("""
+            CREATE OR REPLACE PROCEDURE sp_admin_update_test(
+                p_test_code VARCHAR, p_name VARCHAR, p_description TEXT,
+                p_instruction TEXT, p_is_active BOOLEAN,
+                p_author BIGINT, p_indicator VARCHAR) AS $$
+            BEGIN
+                UPDATE tests SET name = p_name, description = p_description,
+                       instruction = p_instruction, is_active = p_is_active,
+                       author_personnel_number = p_author, indicator_name = p_indicator
+                 WHERE test_code = p_test_code;
+                CALL sp_audit_log(NULL, 'UPDATE', 'tests', 'Изменён тест ' || p_test_code);
+            END;
+            $$ LANGUAGE plpgsql
+            """);
+        exec("""
+            CREATE OR REPLACE PROCEDURE sp_admin_delete_test(p_test_code VARCHAR) AS $$
+            DECLARE v_count BIGINT;
+            BEGIN
+                SELECT COUNT(*) INTO v_count FROM test_protocols WHERE test_code = p_test_code;
+                IF v_count > 0 THEN
+                    RAISE EXCEPTION 'Нельзя удалить тест с % протоколами', v_count;
+                END IF;
+                DELETE FROM answers WHERE question_number IN
+                    (SELECT question_number FROM questions WHERE test_code = p_test_code);
+                DELETE FROM questions WHERE test_code = p_test_code;
+                DELETE FROM tests WHERE test_code = p_test_code;
+                CALL sp_audit_log(NULL, 'DELETE', 'tests', 'Удалён тест ' || p_test_code);
+            END;
+            $$ LANGUAGE plpgsql
+            """);
+
+        // --- Функция: агрегированная динамика результатов студента ---
+        exec("""
+            CREATE OR REPLACE FUNCTION fn_student_dynamics(p_record_book_number BIGINT)
+            RETURNS TABLE(avg_score NUMERIC, min_score SMALLINT, max_score SMALLINT, cnt BIGINT)
+            AS $$
+            BEGIN
+                RETURN QUERY
+                SELECT ROUND(AVG(total_score), 2), MIN(total_score), MAX(total_score), COUNT(*)
+                  FROM test_protocols
+                 WHERE record_book_number = p_record_book_number;
+            END;
+            $$ LANGUAGE plpgsql STABLE
+            """);
+
+        // --- Процедура: закрепление психолога-куратора за студентом ---
+        exec("""
+            CREATE OR REPLACE PROCEDURE sp_assign_curator_psychologist(
+                p_record_book_number BIGINT,
+                p_personnel_number BIGINT) AS $$
+            BEGIN
+                UPDATE students SET curator_personnel_number = p_personnel_number
+                 WHERE record_book_number = p_record_book_number;
+                INSERT INTO consultations(personnel_number, record_book_number,
+                                          consultation_date, consultation_text)
+                VALUES (p_personnel_number, p_record_book_number, CURRENT_DATE,
+                        'Назначен куратором. Начато наблюдение за студентом.');
+                CALL sp_audit_log(NULL, 'UPDATE', 'students',
+                    'Назначен куратор ' || p_personnel_number ||
+                    ' студенту ' || p_record_book_number);
+            END;
+            $$ LANGUAGE plpgsql
+            """);
+
         // ============================================================
         // Хранимые процедуры лабораторной работы №3
-        // (Адаптация типового задания «товары/поставки» к тематике
-        //  мониторинга ментального здоровья: «тесты/протоколы тестирования»)
         // ============================================================
 
-        // ЛР3 / 1. Снизить total_score у всех протоколов на N% — моделирует
-        // снижение уровня стресса после психотерапевтической программы.
+        // ЛР3 / 1. Снизить total_score у всех протоколов на N%.
         execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_decrease_scores(INT)");
         exec("""
             CREATE OR REPLACE PROCEDURE sp_lab3_decrease_scores(p_percent INT)
@@ -212,11 +306,11 @@ public class DbProceduresInitializer {
                 p_test_code VARCHAR,
                 p_name VARCHAR,
                 p_description TEXT,
-                p_instructions TEXT)
+                p_instruction TEXT)
             LANGUAGE plpgsql AS $$
             BEGIN
-                INSERT INTO tests(test_code, name, description, instructions, is_active)
-                VALUES (p_test_code, p_name, p_description, p_instructions, TRUE);
+                INSERT INTO tests(test_code, name, description, instruction, is_active)
+                VALUES (p_test_code, p_name, p_description, p_instruction, TRUE);
             END;
             $$
             """);
@@ -230,23 +324,20 @@ public class DbProceduresInitializer {
             LANGUAGE plpgsql AS $$
             BEGIN
                 DELETE FROM test_protocols p
-                 USING students s, users u
+                 USING students s
                  WHERE p.record_book_number = s.record_book_number
-                   AND s.login = u.login
                    AND p.test_code = p_test_code
-                   AND u.login = p_student_login;
+                   AND s.login = p_student_login;
             END;
             $$
             """);
 
-        // ЛР3 / 4. Удалить заданный тест с возвратом кода ошибки:
-        //   0 — удалено, 1 — есть зависимые протоколы, 2 — теста нет.
+        // ЛР3 / 4. Удалить заданный тест с кодом возврата (0/1/2).
         execIgnore("DROP FUNCTION IF EXISTS fn_lab3_delete_test(VARCHAR)");
         exec("""
             CREATE OR REPLACE FUNCTION fn_lab3_delete_test(p_test_code VARCHAR)
             RETURNS INT AS $$
-            DECLARE
-                v_count BIGINT;
+            DECLARE v_count BIGINT;
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM tests WHERE test_code = p_test_code) THEN
                     RETURN 2;
@@ -264,13 +355,7 @@ public class DbProceduresInitializer {
             $$ LANGUAGE plpgsql
             """);
 
-        // ЛР3 / 5. Вернуть количество прохождений заданного теста.
-        // Если p_student_login пуст/NULL — считаем по всем студентам;
-        // если указан логин — фильтруем результаты только по этому студенту.
-        // Коды возврата через OUT-параметр:
-        //   -1 — теста с таким шифром нет;
-        //   -2 — студента с таким логином нет (только если логин указан);
-        //  ≥ 0 — фактическое количество прохождений.
+        // ЛР3 / 5. Количество прохождений теста (опц. по студенту).
         execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_test_total(VARCHAR)");
         execIgnore("DROP PROCEDURE IF EXISTS sp_lab3_test_total(VARCHAR, VARCHAR)");
         exec("""
@@ -279,35 +364,20 @@ public class DbProceduresInitializer {
                 p_student_login VARCHAR,
                 OUT p_total BIGINT)
             LANGUAGE plpgsql AS $$
-            DECLARE
-                v_rbn BIGINT;
+            DECLARE v_rbn BIGINT;
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM tests WHERE test_code = p_test_code) THEN
-                    p_total := -1;
-                    RETURN;
+                    p_total := -1; RETURN;
                 END IF;
                 IF p_student_login IS NULL OR length(trim(p_student_login)) = 0 THEN
-                    -- Подсчёт по всем студентам
-                    SELECT COUNT(*) INTO p_total
-                      FROM test_protocols
-                     WHERE test_code = p_test_code;
+                    SELECT COUNT(*) INTO p_total FROM test_protocols WHERE test_code = p_test_code;
                 ELSE
-                    -- Фильтр по конкретному студенту
-                    SELECT record_book_number INTO v_rbn
-                      FROM students
-                     WHERE login = p_student_login;
-                    IF v_rbn IS NULL THEN
-                        p_total := -2;
-                        RETURN;
-                    END IF;
-                    SELECT COUNT(*) INTO p_total
-                      FROM test_protocols
-                     WHERE test_code = p_test_code
-                       AND record_book_number = v_rbn;
+                    SELECT record_book_number INTO v_rbn FROM students WHERE login = p_student_login;
+                    IF v_rbn IS NULL THEN p_total := -2; RETURN; END IF;
+                    SELECT COUNT(*) INTO p_total FROM test_protocols
+                     WHERE test_code = p_test_code AND record_book_number = v_rbn;
                 END IF;
-                IF p_total IS NULL THEN
-                    p_total := 0;
-                END IF;
+                IF p_total IS NULL THEN p_total := 0; END IF;
             END;
             $$
             """);
@@ -321,7 +391,7 @@ public class DbProceduresInitializer {
                 p_last_name VARCHAR,
                 p_first_name VARCHAR,
                 p_middle_name VARCHAR,
-                p_position VARCHAR,
+                p_specialization VARCHAR,
                 p_email VARCHAR,
                 p_phone VARCHAR)
             LANGUAGE plpgsql AS $$
@@ -330,7 +400,7 @@ public class DbProceduresInitializer {
                    SET last_name = p_last_name,
                        first_name = p_first_name,
                        middle_name = p_middle_name,
-                       position = p_position,
+                       specialization = p_specialization,
                        email = p_email,
                        phone = p_phone
                  WHERE personnel_number = p_personnel_number;

@@ -89,7 +89,7 @@ public class AdminTableController {
         if (user == null) return "redirect:/login";
 
         model.addAttribute("user", user);
-        model.addAttribute("stressLevels", adminService.findAllStressLevels());
+        model.addAttribute("stressLevels", adminService.findAllGrades());
         return "admin/tables/stress-levels";
     }
 
@@ -98,7 +98,7 @@ public class AdminTableController {
                                      @RequestParam Short maxScore, Authentication authentication, 
                                      RedirectAttributes redirectAttributes) {
         try {
-            adminService.createStressLevel(name, minScore, maxScore);
+            adminService.createGrade(name, minScore, maxScore);
             redirectAttributes.addFlashAttribute("success", "Уровень стресса успешно создан");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -111,7 +111,7 @@ public class AdminTableController {
                                      @RequestParam Short minScore, @RequestParam Short maxScore,
                                      Authentication authentication, RedirectAttributes redirectAttributes) {
         try {
-            adminService.updateStressLevel(id, name, minScore, maxScore);
+            adminService.updateGrade(id, name, minScore, maxScore);
             redirectAttributes.addFlashAttribute("success", "Уровень стресса успешно обновлён");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -123,7 +123,7 @@ public class AdminTableController {
     public String deleteStressLevel(@RequestParam String id, Authentication authentication,
                                     RedirectAttributes redirectAttributes) {
         try {
-            adminService.deleteStressLevel(id);
+            adminService.deleteGrade(id);
             redirectAttributes.addFlashAttribute("success", "Уровень стресса успешно удалён");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -293,7 +293,7 @@ public class AdminTableController {
 
         model.addAttribute("user", user);
         model.addAttribute("recommendations", adminService.findAllRecommendations());
-        model.addAttribute("stressLevels", adminService.findAllStressLevels());
+        model.addAttribute("stressLevels", adminService.findAllGrades());
         return "admin/tables/recommendations";
     }
 
@@ -455,7 +455,7 @@ public class AdminTableController {
 
         model.addAttribute("user", user);
         model.addAttribute("results", adminService.findAllTestResults());
-        model.addAttribute("stressLevels", adminService.findAllStressLevels());
+        model.addAttribute("stressLevels", adminService.findAllGrades());
         return "admin/tables/results";
     }
 

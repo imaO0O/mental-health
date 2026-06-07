@@ -5,49 +5,82 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.rrtu.mental_health_system.model.*;
+import ru.rrtu.mental_health_system.repository.ConsultationRepository;
+import ru.rrtu.mental_health_system.repository.GradeRepository;
+import ru.rrtu.mental_health_system.repository.PsychologistRepository;
 import ru.rrtu.mental_health_system.repository.RecommendationRepository;
-import ru.rrtu.mental_health_system.repository.StressLevelRepository;
 import ru.rrtu.mental_health_system.repository.StudentRepository;
+import ru.rrtu.mental_health_system.repository.TestNoteRepository;
 import ru.rrtu.mental_health_system.service.TestService;
 import ru.rrtu.mental_health_system.service.UserService;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Controller
 @RequestMapping("/psychologist")
 public class PsychologistController {
 
+    /** Порог давности консультации (дней) для попадания в список «требует приёма». */
+    private static final long OVERDUE_DAYS = 30;
+
     private final UserService userService;
     private final TestService testService;
     private final StudentRepository studentRepository;
     private final RecommendationRepository recommendationRepository;
-    private final StressLevelRepository stressLevelRepository;
+    private final GradeRepository gradeRepository;
+    private final ConsultationRepository consultationRepository;
+    private final TestNoteRepository testNoteRepository;
+    private final PsychologistRepository psychologistRepository;
 
     public PsychologistController(UserService userService,
                                   TestService testService,
                                   StudentRepository studentRepository,
                                   RecommendationRepository recommendationRepository,
-                                  StressLevelRepository stressLevelRepository) {
+                                  GradeRepository gradeRepository,
+                                  ConsultationRepository consultationRepository,
+                                  TestNoteRepository testNoteRepository,
+                                  PsychologistRepository psychologistRepository) {
         this.userService = userService;
         this.testService = testService;
         this.studentRepository = studentRepository;
         this.recommendationRepository = recommendationRepository;
-        this.stressLevelRepository = stressLevelRepository;
+        this.gradeRepository = gradeRepository;
+        this.consultationRepository = consultationRepository;
+        this.testNoteRepository = testNoteRepository;
+        this.psychologistRepository = psychologistRepository;
+    }
+
+    private Psychologist currentPsychologist(User user) {
+        if (user == null) return null;
+        return psychologistRepository.findByLogin(user.getLogin());
     }
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, Authentication authentication) {
         User user = userService.findByLogin(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/login";
+        Psychologist psy = currentPsychologist(user);
 
         List<Test> tests = testService.findAll();
-        List<Student> students = studentRepository.findAll();
+        List<Student> curated = curatedStudents(psy);
 
         model.addAttribute("user", user);
+        model.addAttribute("psychologist", psy);
         model.addAttribute("tests", tests);
         model.addAttribute("questionCounts", buildQuestionCounts(tests));
-        model.addAttribute("studentsCount", students.size());
+        model.addAttribute("studentsCount", curated.size());
+        model.addAttribute("curated", curated);
         return "psychologist/dashboard";
+    }
+
+    private List<Student> curatedStudents(Psychologist psy) {
+        if (psy == null) return studentRepository.findAll();
+        return studentRepository.findAll().stream()
+                .filter(s -> s.getCurator() != null
+                        && psy.getPersonnelNumber().equals(s.getCurator().getPersonnelNumber()))
+                .toList();
     }
 
     @GetMapping("/tests")
@@ -79,7 +112,6 @@ public class PsychologistController {
     public String createTestForm(Model model, Authentication authentication) {
         User user = userService.findByLogin(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/login";
-
         model.addAttribute("user", user);
         model.addAttribute("test", null);
         return "psychologist/test-form";
@@ -155,7 +187,6 @@ public class PsychologistController {
         int min = results.stream().mapToInt(r -> r.getTotalScore() == null ? 0 : r.getTotalScore()).min().orElse(0);
         int max = results.stream().mapToInt(r -> r.getTotalScore() == null ? 0 : r.getTotalScore()).max().orElse(0);
 
-        // Готовые массивы для Chart.js: даты, баллы, имена методик.
         java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy");
         java.util.List<String> chartDates  = new java.util.ArrayList<>();
         java.util.List<Integer> chartScores = new java.util.ArrayList<>();
@@ -210,17 +241,25 @@ public class PsychologistController {
         return "redirect:/psychologist/tests";
     }
 
+    /**
+     * Список студентов. По умолчанию — закреплённые за психологом обучающиеся,
+     * отсортированные по давности последней консультации (сначала те, кого давно
+     * не было на приёме). При заданном поиске q/group — адресный поиск по всем студентам.
+     */
     @GetMapping("/students")
     public String students(@RequestParam(required = false) String q,
                            @RequestParam(required = false) String group,
                            Model model, Authentication authentication) {
         User user = userService.findByLogin(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/login";
+        Psychologist psy = currentPsychologist(user);
 
         String query = q == null ? "" : q.trim().toLowerCase();
         String groupFilter = group == null ? "" : group.trim().toLowerCase();
-        List<Student> all = studentRepository.findAll();
-        List<Student> filtered = all.stream()
+        boolean searching = !query.isEmpty() || !groupFilter.isEmpty();
+
+        List<Student> base = searching ? studentRepository.findAll() : curatedStudents(psy);
+        List<Student> filtered = base.stream()
                 .filter(s -> query.isEmpty()
                         || (s.getFullName() != null && s.getFullName().toLowerCase().contains(query))
                         || (s.getUsername() != null && s.getUsername().toLowerCase().contains(query)))
@@ -228,19 +267,64 @@ public class PsychologistController {
                         || (s.getGroupName() != null && s.getGroupName().toLowerCase().contains(groupFilter)))
                 .toList();
 
-        java.util.List<String> groups = all.stream()
-                .map(Student::getGroupName)
-                .filter(java.util.Objects::nonNull)
-                .distinct()
-                .sorted()
-                .toList();
+        LocalDate today = LocalDate.now();
+        java.util.List<java.util.Map<String, Object>> rows = new java.util.ArrayList<>();
+        for (Student s : filtered) {
+            LocalDate last = consultationRepository.findLastDate(s.getRecordBookNumber());
+            Long daysSince = last == null ? null : ChronoUnit.DAYS.between(last, today);
+            boolean overdue = last == null || daysSince > OVERDUE_DAYS;
+            // текущая градация = градация последнего протокола
+            TestResult lastProtocol = lastProtocol(s.getRecordBookNumber());
+            String grade = (lastProtocol != null && lastProtocol.getGrade() != null)
+                    ? lastProtocol.getGrade().getGradeName() : null;
+
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("rbn", s.getRecordBookNumber());
+            row.put("fio", s.getFullName());
+            row.put("group", s.getGroupName());
+            row.put("lastDate", last);
+            row.put("daysSince", daysSince);
+            row.put("overdue", overdue);
+            row.put("grade", grade);
+            row.put("riskGroup", s.getRiskGroup());
+            rows.add(row);
+        }
+        // Сначала «требует приёма» (overdue), затем по возрастанию давности.
+        rows.sort((a, b) -> {
+            boolean oa = Boolean.TRUE.equals(a.get("overdue"));
+            boolean ob = Boolean.TRUE.equals(b.get("overdue"));
+            if (oa != ob) return oa ? -1 : 1;
+            Long da = (Long) a.get("daysSince");
+            Long db = (Long) b.get("daysSince");
+            long va = da == null ? Long.MAX_VALUE : da;
+            long vb = db == null ? Long.MAX_VALUE : db;
+            return Long.compare(vb, va);
+        });
+        long overdueCount = rows.stream().filter(r -> Boolean.TRUE.equals(r.get("overdue"))).count();
+
+        java.util.List<String> groups = studentRepository.findAll().stream()
+                .map(Student::getGroupName).filter(java.util.Objects::nonNull).distinct().sorted().toList();
 
         model.addAttribute("user", user);
-        model.addAttribute("students", filtered);
+        model.addAttribute("rows", rows);
+        model.addAttribute("overdueCount", overdueCount);
+        model.addAttribute("overdueDays", OVERDUE_DAYS);
+        model.addAttribute("searching", searching);
         model.addAttribute("groups", groups);
         model.addAttribute("q", q);
         model.addAttribute("group", group);
         return "psychologist/students";
+    }
+
+    private TestResult lastProtocol(Long rbn) {
+        TestResult last = null;
+        for (TestResult r : testService.getResultsByStudentId(rbn)) {
+            if (last == null || (r.getTakenAt() != null && last.getTakenAt() != null
+                    && r.getTakenAt().isAfter(last.getTakenAt()))) {
+                last = r;
+            }
+        }
+        return last;
     }
 
     @GetMapping("/student/{rbn}/results")
@@ -253,11 +337,54 @@ public class PsychologistController {
         if (student == null) return "redirect:/psychologist/students";
 
         List<TestResult> results = testService.getResultsByStudentId(recordBookNumber);
+        List<TestNote> notes = testNoteRepository.findByStudent(recordBookNumber);
+        List<Consultation> consultations = consultationRepository.findByStudent(recordBookNumber);
 
         model.addAttribute("user", user);
         model.addAttribute("student", student);
         model.addAttribute("results", results);
+        model.addAttribute("notes", notes);
+        model.addAttribute("consultations", consultations);
         return "psychologist/student-results";
+    }
+
+    /** Добавление заметки по протоколу тестирования. */
+    @PostMapping("/student/{rbn}/note")
+    public String addNote(@PathVariable("rbn") Long recordBookNumber,
+                          @RequestParam Long protocolNumber,
+                          @RequestParam String noteText,
+                          Authentication authentication) {
+        User user = userService.findByLogin(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/login";
+        Psychologist psy = currentPsychologist(user);
+        TestResult protocol = testService.findResultById(protocolNumber).orElse(null);
+        if (psy != null && protocol != null && noteText != null && !noteText.isBlank()) {
+            TestNote n = new TestNote();
+            n.setPsychologist(psy);
+            n.setProtocol(protocol);
+            n.setNoteText(noteText);
+            testNoteRepository.save(n);
+        }
+        return "redirect:/psychologist/student/" + recordBookNumber + "/results";
+    }
+
+    /** Регистрация консультации со студентом. */
+    @PostMapping("/student/{rbn}/consultation")
+    public String addConsultation(@PathVariable("rbn") Long recordBookNumber,
+                                  @RequestParam String consultationText,
+                                  Authentication authentication) {
+        User user = userService.findByLogin(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/login";
+        Psychologist psy = currentPsychologist(user);
+        Student student = studentRepository.findById(recordBookNumber).orElse(null);
+        if (psy != null && student != null && consultationText != null && !consultationText.isBlank()) {
+            Consultation c = new Consultation();
+            c.setPsychologist(psy);
+            c.setStudent(student);
+            c.setConsultationText(consultationText);
+            consultationRepository.save(c);
+        }
+        return "redirect:/psychologist/student/" + recordBookNumber + "/results";
     }
 
     @GetMapping("/statistics")
@@ -272,12 +399,12 @@ public class PsychologistController {
         }
 
         java.util.Map<String, Long> levelCounts = new java.util.LinkedHashMap<>();
-        for (StressLevel sl : stressLevelRepository.findAll()) {
-            levelCounts.put(sl.getLevelName(), 0L);
+        for (Grade g : gradeRepository.findAll()) {
+            levelCounts.put(g.getGradeName(), 0L);
         }
         for (TestResult r : allResults) {
-            if (r.getStressLevel() != null) {
-                levelCounts.merge(r.getStressLevel().getLevelName(), 1L, Long::sum);
+            if (r.getGrade() != null) {
+                levelCounts.merge(r.getGrade().getGradeName(), 1L, Long::sum);
             }
         }
 
@@ -290,7 +417,6 @@ public class PsychologistController {
             avgByTest.put(t.getTestCode(), Math.round(avg * 10) / 10.0);
         }
 
-        // Готовые массивы для Chart.js (имя методики ↔ средний балл).
         java.util.List<String> testNamesList = new java.util.ArrayList<>();
         java.util.List<Double> testAvgsList = new java.util.ArrayList<>();
         for (Test t : tests) {
@@ -298,20 +424,11 @@ public class PsychologistController {
             testAvgsList.add(avgByTest.getOrDefault(t.getTestCode(), 0.0));
         }
 
-        // Список обследованных обучающихся с последним результатом и сигнальной
-        // отметкой для тех, чей уровень стресса требует консультации (Высокий/Критический).
         java.util.Set<String> alarmLevels =
                 new java.util.HashSet<>(java.util.Arrays.asList("Высокий", "Критический"));
         java.util.List<java.util.Map<String, Object>> studentRows = new java.util.ArrayList<>();
         for (Student s : studentRepository.findAll()) {
-            List<TestResult> rs = testService.getResultsByStudentId(s.getRecordBookNumber());
-            TestResult last = null;
-            for (TestResult r : rs) {
-                if (last == null || (r.getTakenAt() != null && last.getTakenAt() != null
-                        && r.getTakenAt().isAfter(last.getTakenAt()))) {
-                    last = r;
-                }
-            }
+            TestResult last = lastProtocol(s.getRecordBookNumber());
             java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
             row.put("fio", s.getFullName());
             row.put("group", s.getGroupName());
@@ -320,7 +437,7 @@ public class PsychologistController {
                 row.put("date", last.getTakenAt());
                 row.put("testName", last.getTest() != null ? last.getTest().getName() : "—");
                 row.put("score", last.getTotalScore());
-                String lvl = last.getStressLevel() != null ? last.getStressLevel().getLevelName() : null;
+                String lvl = last.getGrade() != null ? last.getGrade().getGradeName() : null;
                 row.put("level", lvl);
                 row.put("alarm", lvl != null && alarmLevels.contains(lvl));
             } else {
@@ -353,9 +470,9 @@ public class PsychologistController {
     public String createRecommendationForm(Model model, Authentication authentication) {
         User user = userService.findByLogin(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/login";
-
         model.addAttribute("user", user);
-        model.addAttribute("levels", stressLevelRepository.findAll());
+        model.addAttribute("levels", gradeRepository.findAll());
+        model.addAttribute("recommendations", testService.getAllRecommendations());
         return "psychologist/recommendation-form";
     }
 
@@ -366,12 +483,10 @@ public class PsychologistController {
         User user = userService.findByLogin(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/login";
 
-        StressLevel stressLevel = stressLevelRepository.findById(levelName)
-                .orElseThrow(() -> new IllegalArgumentException("Уровень стресса не найден"));
-
+        Grade grade = gradeRepository.findById(levelName)
+                .orElseThrow(() -> new IllegalArgumentException("Градация не найдена"));
         Short orderNumber = (short) (recommendationRepository.count() + 1);
-        testService.createRecommendation(stressLevel, recommendationText, orderNumber);
-
-        return "redirect:/psychologist/statistics";
+        testService.createRecommendation(grade, recommendationText, orderNumber);
+        return "redirect:/psychologist/recommendation/create";
     }
 }

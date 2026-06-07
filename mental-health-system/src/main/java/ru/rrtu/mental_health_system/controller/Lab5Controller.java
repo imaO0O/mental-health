@@ -237,7 +237,7 @@ public class Lab5Controller {
         if (r.getTest() == null) return;
         int max = testService.getMaxPossibleScore(r.getTest().getTestCode());
         Short score = r.getTotalScore() == null ? (short) 0 : r.getTotalScore();
-        StressLevel newLevel = testService.getStressLevelForResult(score, max);
+        Grade newLevel = testService.getStressLevelForResult(score, max);
         if (newLevel != null) {
             r.setStressLevel(newLevel);
         }

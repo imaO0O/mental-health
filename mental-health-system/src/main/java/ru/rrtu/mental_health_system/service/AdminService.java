@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * CRUD для всех таблиц БД, доступных администратору.
- * Все идентификаторы — естественные ключи согласно ПЗ.
+ * CRUD для всех таблиц БД, доступных администратору (модель данных из ПЗ).
+ * Естественные ключи: grades.grade_name, indicators.indicator_name и т. д.
  */
 @Service
 public class AdminService {
@@ -20,44 +20,44 @@ public class AdminService {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final PsychologistRepository psychologistRepository;
-    private final StressLevelRepository stressLevelRepository;
+    private final GradeRepository gradeRepository;
     private final TestRepository testRepository;
-    private final TestCategoryRepository testCategoryRepository;
-    private final ResultStatusRepository resultStatusRepository;
+    private final IndicatorRepository indicatorRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final TestResultRepository testResultRepository;
     private final RecommendationRepository recommendationRepository;
-    private final PsychologistNoteRepository psychologistNoteRepository;
+    private final TestNoteRepository testNoteRepository;
+    private final ConsultationRepository consultationRepository;
     private final AuditLogRepository auditLogRepository;
 
     public AdminService(RoleRepository roleRepository,
                         UserRepository userRepository,
                         StudentRepository studentRepository,
                         PsychologistRepository psychologistRepository,
-                        StressLevelRepository stressLevelRepository,
+                        GradeRepository gradeRepository,
                         TestRepository testRepository,
-                        TestCategoryRepository testCategoryRepository,
-                        ResultStatusRepository resultStatusRepository,
+                        IndicatorRepository indicatorRepository,
                         QuestionRepository questionRepository,
                         AnswerRepository answerRepository,
                         TestResultRepository testResultRepository,
                         RecommendationRepository recommendationRepository,
-                        PsychologistNoteRepository psychologistNoteRepository,
+                        TestNoteRepository testNoteRepository,
+                        ConsultationRepository consultationRepository,
                         AuditLogRepository auditLogRepository) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.psychologistRepository = psychologistRepository;
-        this.stressLevelRepository = stressLevelRepository;
+        this.gradeRepository = gradeRepository;
         this.testRepository = testRepository;
-        this.testCategoryRepository = testCategoryRepository;
-        this.resultStatusRepository = resultStatusRepository;
+        this.indicatorRepository = indicatorRepository;
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
         this.testResultRepository = testResultRepository;
         this.recommendationRepository = recommendationRepository;
-        this.psychologistNoteRepository = psychologistNoteRepository;
+        this.testNoteRepository = testNoteRepository;
+        this.consultationRepository = consultationRepository;
         this.auditLogRepository = auditLogRepository;
     }
 
@@ -69,14 +69,11 @@ public class AdminService {
     public Optional<Role> findRoleById(String roleName) { return roleRepository.findById(roleName); }
 
     @Transactional
-    public Role createRole(String name) {
-        return createRole(name, null);
-    }
+    public Role createRole(String name) { return createRole(name, null); }
 
     @Transactional
     public Role createRole(String name, String description) {
-        Role role = new Role(name, description);
-        return roleRepository.save(role);
+        return roleRepository.save(new Role(name, description));
     }
 
     @Transactional
@@ -90,28 +87,48 @@ public class AdminService {
     @Transactional
     public void deleteRole(String roleName) { roleRepository.deleteById(roleName); }
 
-    // =========================== Stress Levels ==========================
+    // ============================= Grades ==============================
     @Transactional(readOnly = true)
-    public List<StressLevel> findAllStressLevels() { return stressLevelRepository.findAll(); }
+    public List<Grade> findAllGrades() { return gradeRepository.findAll(); }
 
     @Transactional
-    public StressLevel createStressLevel(String name, Short minPercent, Short maxPercent) {
-        StressLevel sl = new StressLevel(name, minPercent, maxPercent);
-        return stressLevelRepository.save(sl);
+    public Grade createGrade(String name, Short minPercent, Short maxPercent) {
+        return gradeRepository.save(new Grade(name, minPercent, maxPercent));
     }
 
     @Transactional
-    public StressLevel updateStressLevel(String levelName, String newName, Short minPercent, Short maxPercent) {
-        StressLevel sl = stressLevelRepository.findById(levelName)
-                .orElseThrow(() -> new IllegalArgumentException("Уровень стресса не найден"));
-        sl.setLevelName(newName);
-        sl.setMinPercent(minPercent);
-        sl.setMaxPercent(maxPercent);
-        return stressLevelRepository.save(sl);
+    public Grade updateGrade(String gradeName, String newName, Short minPercent, Short maxPercent) {
+        Grade g = gradeRepository.findById(gradeName)
+                .orElseThrow(() -> new IllegalArgumentException("Градация не найдена"));
+        g.setGradeName(newName);
+        g.setMinPercent(minPercent);
+        g.setMaxPercent(maxPercent);
+        return gradeRepository.save(g);
     }
 
     @Transactional
-    public void deleteStressLevel(String levelName) { stressLevelRepository.deleteById(levelName); }
+    public void deleteGrade(String gradeName) { gradeRepository.deleteById(gradeName); }
+
+    // ============================ Indicators ===========================
+    @Transactional(readOnly = true)
+    public List<Indicator> findAllIndicators() { return indicatorRepository.findAll(); }
+
+    @Transactional
+    public Indicator createIndicator(String name, String description) {
+        return indicatorRepository.save(new Indicator(name, description));
+    }
+
+    @Transactional
+    public Indicator updateIndicator(String indicatorName, String newName, String description) {
+        Indicator i = indicatorRepository.findById(indicatorName)
+                .orElseThrow(() -> new IllegalArgumentException("Показатель не найден"));
+        i.setIndicatorName(newName);
+        i.setDescription(description);
+        return indicatorRepository.save(i);
+    }
+
+    @Transactional
+    public void deleteIndicator(String name) { indicatorRepository.deleteById(name); }
 
     // ============================ Tests ============================
     @Transactional(readOnly = true)
@@ -122,54 +139,30 @@ public class AdminService {
 
     @Transactional
     public Test createTest(String testCode, String name, String description,
-                            String instructions, Boolean isActive) {
+                           String instruction, Boolean isActive) {
         Test t = new Test();
         t.setTestCode(testCode);
         t.setName(name);
         t.setDescription(description);
-        t.setInstructions(instructions);
+        t.setInstruction(instruction);
         t.setIsActive(isActive != null ? isActive : true);
         return testRepository.save(t);
     }
 
     @Transactional
     public Test updateTest(String testCode, String name, String description,
-                            String instructions, Boolean isActive) {
+                           String instruction, Boolean isActive) {
         Test t = testRepository.findById(testCode)
                 .orElseThrow(() -> new IllegalArgumentException("Тест не найден"));
         t.setName(name);
         t.setDescription(description);
-        t.setInstructions(instructions);
+        t.setInstruction(instruction);
         t.setIsActive(isActive);
         return testRepository.save(t);
     }
 
     @Transactional
     public void deleteTest(String testCode) { testRepository.deleteById(testCode); }
-
-    // ========================== Test categories ==========================
-    @Transactional(readOnly = true)
-    public List<TestCategory> findAllCategories() { return testCategoryRepository.findAll(); }
-
-    @Transactional
-    public TestCategory createCategory(String name, String description) {
-        return testCategoryRepository.save(new TestCategory(name, description));
-    }
-
-    @Transactional
-    public void deleteCategory(String name) { testCategoryRepository.deleteById(name); }
-
-    // ========================== Result statuses ==========================
-    @Transactional(readOnly = true)
-    public List<ResultStatus> findAllStatuses() { return resultStatusRepository.findAll(); }
-
-    @Transactional
-    public ResultStatus createStatus(String name, String description) {
-        return resultStatusRepository.save(new ResultStatus(name, description));
-    }
-
-    @Transactional
-    public void deleteStatus(String name) { resultStatusRepository.deleteById(name); }
 
     // ============================ Questions ============================
     @Transactional(readOnly = true)
@@ -242,25 +235,25 @@ public class AdminService {
     public List<Recommendation> findAllRecommendations() { return recommendationRepository.findAll(); }
 
     @Transactional
-    public Recommendation createRecommendation(String levelName, String recommendationText, Short orderNumber) {
-        StressLevel level = stressLevelRepository.findById(levelName)
-                .orElseThrow(() -> new IllegalArgumentException("Уровень стресса не найден"));
+    public Recommendation createRecommendation(String gradeName, String recommendationText, Short orderNumber) {
+        Grade grade = gradeRepository.findById(gradeName)
+                .orElseThrow(() -> new IllegalArgumentException("Градация не найдена"));
         Recommendation r = new Recommendation();
-        r.setStressLevel(level);
+        r.setGrade(grade);
         r.setRecommendationText(recommendationText);
         r.setOrderNumber(orderNumber);
         return recommendationRepository.save(r);
     }
 
     @Transactional
-    public Recommendation updateRecommendation(Long recommendationCode, String levelName,
+    public Recommendation updateRecommendation(Long recommendationCode, String gradeName,
                                                String recommendationText, Short orderNumber) {
         Recommendation r = recommendationRepository.findById(recommendationCode)
                 .orElseThrow(() -> new IllegalArgumentException("Рекомендация не найдена"));
-        if (levelName != null) {
-            StressLevel level = stressLevelRepository.findById(levelName)
-                    .orElseThrow(() -> new IllegalArgumentException("Уровень стресса не найден"));
-            r.setStressLevel(level);
+        if (gradeName != null) {
+            Grade grade = gradeRepository.findById(gradeName)
+                    .orElseThrow(() -> new IllegalArgumentException("Градация не найдена"));
+            r.setGrade(grade);
         }
         r.setRecommendationText(recommendationText);
         r.setOrderNumber(orderNumber);
@@ -278,8 +271,8 @@ public class AdminService {
 
     @Transactional
     public Student createStudent(String login, Long recordBookNumber, String lastName,
-                                  String firstName, String middleName, String groupName,
-                                  String email, String phone) {
+                                 String firstName, String middleName, String groupName,
+                                 String email, String phone) {
         User user = userRepository.findById(login)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
         Student s = new Student();
@@ -289,6 +282,7 @@ public class AdminService {
         s.setFirstName(firstName);
         s.setMiddleName(middleName);
         s.setGroupName(groupName);
+        s.setRiskGroup("нет");
         s.setEmail(email);
         s.setPhone(phone);
         return studentRepository.save(s);
@@ -296,8 +290,8 @@ public class AdminService {
 
     @Transactional
     public Student updateStudent(Long recordBookNumber, String lastName, String firstName,
-                                  String middleName, String groupName,
-                                  String email, String phone) {
+                                 String middleName, String groupName,
+                                 String email, String phone) {
         Student s = studentRepository.findById(recordBookNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Студент не найден"));
         s.setLastName(lastName);
@@ -310,9 +304,7 @@ public class AdminService {
     }
 
     @Transactional
-    public void deleteStudent(Long recordBookNumber) {
-        studentRepository.deleteById(recordBookNumber);
-    }
+    public void deleteStudent(Long recordBookNumber) { studentRepository.deleteById(recordBookNumber); }
 
     // =========================== Psychologists ===========================
     @Transactional(readOnly = true)
@@ -320,8 +312,8 @@ public class AdminService {
 
     @Transactional
     public Psychologist createPsychologist(String login, Long personnelNumber, String lastName,
-                                            String firstName, String middleName, String position,
-                                            String email, String phone) {
+                                           String firstName, String middleName, String specialization,
+                                           String email, String phone) {
         User user = userRepository.findById(login)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
         Psychologist p = new Psychologist();
@@ -330,7 +322,7 @@ public class AdminService {
         p.setLastName(lastName);
         p.setFirstName(firstName);
         p.setMiddleName(middleName);
-        p.setPosition(position);
+        p.setSpecialization(specialization);
         p.setEmail(email);
         p.setPhone(phone);
         return psychologistRepository.save(p);
@@ -338,14 +330,14 @@ public class AdminService {
 
     @Transactional
     public Psychologist updatePsychologist(Long personnelNumber, String lastName, String firstName,
-                                            String middleName, String position,
-                                            String email, String phone) {
+                                           String middleName, String specialization,
+                                           String email, String phone) {
         Psychologist p = psychologistRepository.findById(personnelNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Психолог не найден"));
         p.setLastName(lastName);
         p.setFirstName(firstName);
         p.setMiddleName(middleName);
-        p.setPosition(position);
+        p.setSpecialization(specialization);
         p.setEmail(email);
         p.setPhone(phone);
         return psychologistRepository.save(p);
@@ -367,13 +359,13 @@ public class AdminService {
 
     @Transactional
     public TestResult updateTestResult(Long protocolNumber, Short totalScore,
-                                        LocalDate dateTaken, String levelName) {
+                                       LocalDate dateTaken, String gradeName) {
         TestResult r = testResultRepository.findById(protocolNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Протокол не найден"));
-        if (levelName != null) {
-            StressLevel sl = stressLevelRepository.findById(levelName)
-                    .orElseThrow(() -> new IllegalArgumentException("Уровень стресса не найден"));
-            r.setStressLevel(sl);
+        if (gradeName != null) {
+            Grade g = gradeRepository.findById(gradeName)
+                    .orElseThrow(() -> new IllegalArgumentException("Градация не найдена"));
+            r.setGrade(g);
         }
         r.setTotalScore(totalScore);
         if (dateTaken != null) r.setTakenAt(dateTaken.atStartOfDay());
@@ -381,15 +373,16 @@ public class AdminService {
     }
 
     @Transactional
-    public void deleteTestResult(Long protocolNumber) {
-        testResultRepository.deleteById(protocolNumber);
-    }
+    public void deleteTestResult(Long protocolNumber) { testResultRepository.deleteById(protocolNumber); }
 
     // ============================ Audit Log ============================
     @Transactional(readOnly = true)
     public List<AuditLog> findAllAuditLogs() { return auditLogRepository.findAll(); }
 
-    // ======================== Psychologist Notes ========================
+    // ===================== Notes / Consultations =======================
     @Transactional(readOnly = true)
-    public List<PsychologistNote> findAllNotes() { return psychologistNoteRepository.findAll(); }
+    public List<TestNote> findAllNotes() { return testNoteRepository.findAll(); }
+
+    @Transactional(readOnly = true)
+    public List<Consultation> findAllConsultations() { return consultationRepository.findAll(); }
 }

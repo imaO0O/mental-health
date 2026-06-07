@@ -3,11 +3,8 @@ package ru.rrtu.mental_health_system.model;
 import jakarta.persistence.*;
 
 /**
- * Студент.
- *
- * Согласно проектировке (см. ПЗ, таблица «students»),
- * первичный ключ — естественный: номер зачётной книжки.
- * Внешний ключ — логин учётной записи (User.login).
+ * Студент (таблица «students»). Первичный ключ — номер зачётной книжки.
+ * Внешние ключи: логин учётной записи и табельный номер психолога-куратора.
  */
 @Entity
 @Table(name = "students")
@@ -32,6 +29,19 @@ public class Student {
 
     @Column(name = "group_name", nullable = false, length = 20)
     private String groupName;
+
+    /** Психологический тип (определяется по результатам диагностики). */
+    @Column(name = "psych_type", length = 50)
+    private String psychType;
+
+    /** Группа риска: нет / умеренная / высокая. */
+    @Column(name = "risk_group", length = 20)
+    private String riskGroup;
+
+    /** Психолог-куратор (FK на personnel_number). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curator_personnel_number")
+    private Psychologist curator;
 
     @Column(name = "email", length = 100)
     private String email;
@@ -61,6 +71,15 @@ public class Student {
     public String getGroupName() { return groupName; }
     public void setGroupName(String s) { this.groupName = s; }
 
+    public String getPsychType() { return psychType; }
+    public void setPsychType(String s) { this.psychType = s; }
+
+    public String getRiskGroup() { return riskGroup; }
+    public void setRiskGroup(String s) { this.riskGroup = s; }
+
+    public Psychologist getCurator() { return curator; }
+    public void setCurator(Psychologist p) { this.curator = p; }
+
     public String getEmail() { return email; }
     public void setEmail(String s) { this.email = s; }
 
@@ -69,7 +88,7 @@ public class Student {
 
     public String getFullName() {
         StringBuilder sb = new StringBuilder();
-        sb.append(lastName);
+        if (lastName != null) sb.append(lastName);
         if (firstName != null && !firstName.isEmpty()) sb.append(" ").append(firstName);
         if (middleName != null && !middleName.isEmpty()) sb.append(" ").append(middleName);
         return sb.toString().trim();

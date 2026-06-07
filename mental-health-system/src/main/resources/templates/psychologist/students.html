@@ -10,6 +10,7 @@
         .navbar { background-color: #5a4ba2 !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+        tr.overdue td { background-color: #fff4f4; }
     </style>
 </head>
 <body>
@@ -19,8 +20,8 @@
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
-                <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
-                <a class="nav-link" th:href="@{/psychologist/recommendation/create}">Рекомендация</a>
+                <a class="nav-link active" th:href="@{/psychologist/students}">Студенты</a>
+                <a class="nav-link" th:href="@{/psychologist/recommendation/create}">Рекомендации</a>
                 <a class="nav-link" th:href="@{/psychologist/statistics}">Статистика</a>
                 <a class="nav-link" th:href="@{/logout}">Выйти</a>
             </div>
@@ -28,10 +29,25 @@
     </nav>
 
     <div class="container py-4">
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-12">
                 <h1>👨‍🎓 Студенты</h1>
-                <p class="text-muted">Список студентов и их результаты</p>
+                <p class="text-muted" th:if="${!searching}">
+                    Закреплённые за вами обучающиеся, отсортированные по давности приёма
+                    (сначала те, кого нужно пригласить на осмотр).
+                </p>
+                <p class="text-muted" th:if="${searching}">
+                    Результаты адресного поиска по всем обучающимся.
+                </p>
+            </div>
+        </div>
+
+        <div class="alert alert-warning d-flex align-items-center" th:if="${!searching and overdueCount > 0}">
+            <span class="me-2" style="font-size:1.3rem;">⚠️</span>
+            <div>
+                Требуют приёма (более <strong th:text="${overdueDays}">30</strong> дней без консультации
+                либо консультаций не было):
+                <strong th:text="${overdueCount}">0</strong> чел.
             </div>
         </div>
 
@@ -39,13 +55,13 @@
             <div class="card-body">
                 <form method="get" th:action="@{/psychologist/students}" class="row g-2 align-items-end">
                     <div class="col-md-5">
-                        <label class="form-label small text-muted mb-1">Поиск по ФИО или логину</label>
-                        <input type="text" name="q" class="form-control" th:value="${q}" placeholder="Иванов / ivan...">
+                        <label class="form-label small text-muted mb-1">Адресный поиск по ФИО или логину</label>
+                        <input type="text" name="q" class="form-control" th:value="${q}" placeholder="Иванов / ivanov...">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small text-muted mb-1">Группа</label>
                         <input list="groupsList" type="text" name="group" class="form-control"
-                               th:value="${group}" placeholder="например, ИКПИ-21">
+                               th:value="${group}" placeholder="например, ИВТ-41">
                         <datalist id="groupsList">
                             <option th:each="g : ${groups}" th:value="${g}"></option>
                         </datalist>
@@ -58,49 +74,48 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive" th:if="${students}">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>№ зачётной книжки</th>
-                                        <th>ФИО</th>
-                                        <th>Группа</th>
-                                        <th>Логин</th>
-                                        <th>Email</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="student, iterStat : ${students}">
-                                        <td>
-                                            <span class="badge bg-dark"
-                                                  th:text="${student.recordBookNumber} ?: '—'">З-2024-0001</span>
-                                        </td>
-                                        <td th:text="${student.fullName} ?: 'Не указано'">ФИО</td>
-                                        <td>
-                                            <span class="badge bg-secondary"
-                                                  th:text="${student.groupName} ?: '—'">ИВТ-41</span>
-                                        </td>
-                                        <td th:text="${student.username}">username</td>
-                                        <td th:text="${student.email}">email</td>
-                                        <td>
-                                            <a th:href="@{/psychologist/student/{id}/results(id=${student.id})}" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                Результаты
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="alert alert-info" th:if="${#lists.isEmpty(students)}">
-                            Студенты ещё не зарегистрированы.
-                        </div>
-                    </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>ФИО</th>
+                                <th>Группа</th>
+                                <th>Последняя консультация</th>
+                                <th>Давность</th>
+                                <th>Текущая градация</th>
+                                <th>Группа риска</th>
+                                <th>Статус</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row : ${rows}" th:classappend="${row.overdue} ? 'overdue' : ''">
+                                <td th:text="${row.fio}">ФИО</td>
+                                <td><span class="badge bg-secondary" th:text="${row.group}">ИВТ-41</span></td>
+                                <td th:text="${row.lastDate != null ? #temporals.format(row.lastDate, 'dd.MM.yyyy') : 'не было'}">—</td>
+                                <td th:text="${row.daysSince != null ? row.daysSince + ' дн. назад' : '—'}">—</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${row.grade == 'Низкий' ? 'bg-success' : (row.grade == 'Средний' ? 'bg-warning text-dark' : (row.grade == 'Высокий' ? 'bg-danger' : (row.grade == 'Критический' ? 'bg-dark' : 'bg-light text-muted')))}"
+                                          th:text="${row.grade != null ? row.grade : '—'}">—</span>
+                                </td>
+                                <td th:text="${row.riskGroup != null ? row.riskGroup : '—'}">—</td>
+                                <td>
+                                    <span class="badge bg-danger" th:if="${row.overdue}">требует приёма</span>
+                                    <span class="badge bg-success" th:unless="${row.overdue}">в норме</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/psychologist/student/{id}/results(id=${row.rbn})}"
+                                       class="btn btn-sm btn-outline-primary">Карточка</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mb-0" th:if="${#lists.isEmpty(rows)}">
+                    Студентов не найдено.
                 </div>
             </div>
         </div>

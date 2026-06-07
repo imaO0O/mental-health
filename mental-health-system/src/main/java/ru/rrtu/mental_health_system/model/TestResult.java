@@ -4,13 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Протокол прохождения теста (test_protocols).
+ * Протокол прохождения теста (таблица «test_protocols»).
  *
- * Согласно проектировке (см. ПЗ, таблица «test_protocols»),
- * первичный ключ — естественный «Номер протокола тестирования».
- *
- * Класс назван TestResult по историческим причинам, но соответствует
- * сущности «Протокол тестирования» из ПЗ.
+ * Первичный ключ — естественный «Номер протокола». Заключение протокола —
+ * градация (grade_name), определяемая по доле баллов от максимума.
+ * Класс назван TestResult по историческим причинам.
  */
 @Entity
 @Table(name = "test_protocols")
@@ -35,13 +33,10 @@ public class TestResult {
     @Column(name = "total_score", nullable = false)
     private Short totalScore;
 
+    /** Заключение — градация (FK на grade_name). */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "level_name")
-    private StressLevel stressLevel;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "status_name")
-    private ResultStatus status;
+    @JoinColumn(name = "grade_name")
+    private Grade grade;
 
     @PrePersist
     protected void onCreate() {
@@ -75,9 +70,10 @@ public class TestResult {
     public Short getTotalScore() { return totalScore; }
     public void setTotalScore(Short s) { this.totalScore = s; }
 
-    public StressLevel getStressLevel() { return stressLevel; }
-    public void setStressLevel(StressLevel sl) { this.stressLevel = sl; }
+    public Grade getGrade() { return grade; }
+    public void setGrade(Grade g) { this.grade = g; }
 
-    public ResultStatus getStatus() { return status; }
-    public void setStatus(ResultStatus s) { this.status = s; }
+    /** Алиасы для совместимости со старыми шаблонами (stressLevel). */
+    public Grade getStressLevel() { return grade; }
+    public void setStressLevel(Grade g) { this.grade = g; }
 }

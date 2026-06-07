@@ -3,10 +3,7 @@ package ru.rrtu.mental_health_system.model;
 import jakarta.persistence.*;
 
 /**
- * Психолог.
- *
- * Согласно проектировке (см. ПЗ, таблица «psychologists»),
- * первичный ключ — естественный: табельный номер.
+ * Психолог (таблица «psychologists»). Первичный ключ — табельный номер.
  * Внешний ключ — логин учётной записи (User.login).
  */
 @Entity
@@ -30,8 +27,9 @@ public class Psychologist {
     @Column(name = "middle_name", length = 50)
     private String middleName;
 
-    @Column(name = "position", length = 100)
-    private String position;
+    /** Специализация — область психодиагностики психолога. */
+    @Column(name = "specialization", length = 100)
+    private String specialization;
 
     @Column(name = "email", length = 100)
     private String email;
@@ -58,8 +56,12 @@ public class Psychologist {
     public String getMiddleName() { return middleName; }
     public void setMiddleName(String s) { this.middleName = s; }
 
-    public String getPosition() { return position; }
-    public void setPosition(String s) { this.position = s; }
+    public String getSpecialization() { return specialization; }
+    public void setSpecialization(String s) { this.specialization = s; }
+
+    /** Алиасы для совместимости со старым кодом/шаблонами (position). */
+    public String getPosition() { return specialization; }
+    public void setPosition(String s) { this.specialization = s; }
 
     public String getEmail() { return email; }
     public void setEmail(String s) { this.email = s; }
