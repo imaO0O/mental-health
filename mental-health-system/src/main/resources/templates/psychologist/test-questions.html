@@ -7,15 +7,16 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
+        .navbar { background-color: #1b5e7e !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+        <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
         <div class="navbar-nav ms-auto">
             <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
             <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
@@ -26,11 +27,11 @@
 
 <div class="container py-4">
     <a th:href="@{/psychologist/tests}" class="btn btn-outline-secondary mb-3">← К списку тестов</a>
-    <h1>📝 Вопросы теста: <span th:text="${test.name}"></span></h1>
+    <h1>Вопросы теста: <span th:text="${test.name}"></span></h1>
     <p class="text-muted" th:text="${test.description}"></p>
 
     <div class="card mt-3">
-        <div class="card-header"><strong>➕ Добавить вопрос</strong></div>
+        <div class="card-header"><strong>Добавить вопрос</strong></div>
         <div class="card-body">
             <form th:action="@{/psychologist/test/{id}/question/add(id=${test.id})}" method="post" class="row g-2">
                 <div class="col-md-10">

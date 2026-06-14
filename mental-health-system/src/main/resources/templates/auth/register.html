@@ -7,8 +7,8 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         :root {
-            --brand-1: #667eea;
-            --brand-2: #764ba2;
+            --brand-1: #1b5e7e;
+            --brand-2: #1b5e7e;
         }
         html, body { height: 100%; }
         body {
@@ -22,7 +22,7 @@
             grid-template-columns: 1fr 1.15fr;
         }
         .auth-hero {
-            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            background: #1b5e7e;
             color: #fff;
             padding: 60px 56px;
             display: flex;
@@ -70,11 +70,11 @@
             border-radius: 10px; padding: .6rem .85rem; border: 1px solid #e5e7eb;
         }
         .form-control:focus, .form-select:focus {
-            border-color: var(--brand-1);
+            border-color: #1b5e7e;
             box-shadow: 0 0 0 .2rem rgba(102, 126, 234, .15);
         }
         .btn-brand {
-            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            background: #1b5e7e;
             border: none; color: #fff; border-radius: 10px;
             padding: .7rem 1rem; font-weight: 600;
             transition: transform .08s ease, box-shadow .15s ease;
@@ -84,7 +84,7 @@
             box-shadow: 0 6px 18px rgba(102, 126, 234, .35);
             transform: translateY(-1px);
         }
-        a { color: var(--brand-2); text-decoration: none; font-weight: 500; }
+        a { color: #1b5e7e; text-decoration: none; font-weight: 500; }
         a:hover { text-decoration: underline; }
 
         /* Role chooser */
@@ -103,8 +103,8 @@
         .role-toggle label .desc { font-size: .75rem; color: #6b7280; text-align: center; }
         .role-toggle input[type="radio"] { display: none; }
         .role-toggle input[type="radio"]:checked + label {
-            border-color: var(--brand-1);
-            background: linear-gradient(135deg, rgba(102,126,234,.08), rgba(118,75,162,.08));
+            border-color: #1b5e7e;
+            background: #1b5e7e;
             box-shadow: 0 4px 12px rgba(102,126,234,.15);
         }
         .role-block {
@@ -122,11 +122,12 @@
             .auth-card { padding: 28px 22px; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <div class="auth-wrapper">
         <aside class="auth-hero">
-            <div class="brand">🧠 Психотестирование</div>
+            <div class="brand">Мониторинг ментального здоровья</div>
             <div>
                 <h1>Создайте аккаунт за минуту</h1>
                 <p class="lead">Присоединяйтесь к платформе для мониторинга ментального здоровья.</p>
@@ -152,7 +153,7 @@
                                th:checked="*{role == null or role == 'STUDENT'}"
                                onchange="toggleRoleFields()">
                         <label for="roleStudent">
-                            <span class="ico">🎓</span>
+                            <span class="ico"></span>
                             <span class="title">Студент</span>
                             <span class="desc">Прохождение тестов</span>
                         </label>
@@ -160,7 +161,7 @@
                                th:checked="*{role == 'PSYCHOLOGIST'}"
                                onchange="toggleRoleFields()">
                         <label for="rolePsy">
-                            <span class="ico">👩‍⚕️</span>
+                            <span class="ico"></span>
                             <span class="title">Психолог</span>
                             <span class="desc">Анализ результатов</span>
                         </label>
@@ -197,7 +198,7 @@
 
                     <!-- Student-specific block -->
                     <div class="role-block" id="studentBlock">
-                        <div class="role-block-title">🎓 Данные студента</div>
+                        <div class="role-block-title">Данные студента</div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Группа *</label>
@@ -225,7 +226,7 @@
 
                     <!-- Psychologist-specific block -->
                     <div class="role-block d-none" id="psyBlock">
-                        <div class="role-block-title">👩‍⚕️ Данные психолога</div>
+                        <div class="role-block-title">Данные психолога</div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Должность *</label>
@@ -252,7 +253,7 @@
                             </div>
                         </div>
                         <div class="alert alert-warning py-2 small mb-0">
-                            ⚠️ Регистрация психолога может требовать подтверждения администратора.
+                            Регистрация психолога может требовать подтверждения администратора.
                         </div>
                     </div>
 

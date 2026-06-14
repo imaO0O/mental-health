@@ -7,15 +7,16 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
+        .navbar { background-color: #1b5e7e !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/logout}">Выйти</a>
@@ -26,7 +27,7 @@
     <div class="container py-4">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <h1 th:text="${test != null and test.id != null} ? '✏️ Редактирование теста' : '➕ Создание теста'">Тест</h1>
+                <h1 th:text="${test != null and test.id != null} ? 'Редактирование теста' : 'Создание теста'">Тест</h1>
                 
                 <div class="card mt-4">
                     <div class="card-body">

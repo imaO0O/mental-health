@@ -1,0 +1,78 @@
+/* =====================================================================
+   Официальный медицинский стиль интерфейса ИС «Мониторинг ментального
+   здоровья». Переопределяет оформление Bootstrap: строгая клиническая
+   палитра, серифные заголовки, плоские панели с рамкой, без эмодзи и
+   градиентов. Подключается ПОСЛЕ bootstrap.min.css.
+   ===================================================================== */
+:root{
+  --med-primary:#1b5e7e;     /* глубокий медицинский сине-зелёный */
+  --med-primary-d:#154d68;
+  --med-bg:#eef1f4;
+  --med-line:#cfd8dd;
+  --med-head:#e8eef2;
+  --med-ink:#1b2429;
+  --med-muted:#5b6b73;
+}
+body{ background:var(--med-bg) !important; color:var(--med-ink);
+      font-family:"Segoe UI",system-ui,Arial,sans-serif; }
+
+/* --- серифные официальные заголовки --- */
+h1,h2,h3,h4,h5,.card-title,.display-6{
+  font-family:"Times New Roman",Times,serif !important; color:var(--med-ink); }
+h1,.display-6{ font-size:1.6rem !important; font-weight:700 !important; }
+h3{ font-size:1.2rem !important; font-weight:700 !important;
+    border-bottom:1px solid var(--med-line); padding-bottom:6px; }
+
+/* --- навигация --- */
+.navbar{ background:var(--med-primary) !important; border-bottom:3px solid var(--med-primary-d); }
+.navbar-brand{ font-weight:700 !important; letter-spacing:.2px; font-size:1.02rem !important;
+  font-family:"Times New Roman",Times,serif !important; }
+.navbar .nav-link{ color:#dbe7ec !important; font-size:.93rem; }
+.navbar .nav-link:hover,.navbar .nav-link.active{ color:#fff !important;
+  border-bottom:2px solid #fff; }
+
+/* --- официальная «шапка-бланк» страницы --- */
+.med-letterhead{ font-size:.82rem; color:var(--med-muted); letter-spacing:.2px;
+  text-transform:uppercase; border-bottom:2px solid var(--med-primary);
+  padding-bottom:6px; margin-bottom:14px; }
+
+/* --- панели/карточки: плоские, с рамкой --- */
+.card{ box-shadow:none !important; border:1px solid var(--med-line) !important;
+  border-radius:4px !important; transition:none !important; }
+.card:hover{ transform:none !important; }
+
+/* --- таблицы --- */
+.table{ font-size:.93rem; color:var(--med-ink); }
+.table thead th{ background:var(--med-head) !important; border-color:var(--med-line) !important;
+  font-weight:600; color:var(--med-ink); }
+.table td,.table th{ border-color:var(--med-line) !important; vertical-align:middle; }
+tr.overdue td{ background:#fdeded !important; }
+
+/* --- кнопки --- */
+.btn-primary{ background:var(--med-primary) !important; border-color:var(--med-primary) !important; }
+.btn-primary:hover{ background:var(--med-primary-d) !important; border-color:var(--med-primary-d) !important; }
+.btn-outline-primary{ color:var(--med-primary) !important; border-color:var(--med-primary) !important; }
+.btn-outline-primary:hover{ background:var(--med-primary) !important; color:#fff !important; }
+.btn-outline-secondary{ color:var(--med-muted) !important; border-color:var(--med-line) !important; }
+
+/* --- бейджи статусов: приглушённые клинические --- */
+.badge{ font-weight:600; border-radius:3px; }
+.badge.bg-success{ background:#e6f4ea !important; color:#1e6b35 !important; border:1px solid #bfe0c8; }
+.badge.bg-warning{ background:#fdf3e0 !important; color:#8a5a00 !important; border:1px solid #f0dcb0; }
+.badge.bg-danger{ background:#fdeaea !important; color:#a51c1c !important; border:1px solid #f1c4c4; }
+.badge.bg-dark{ background:#efe6f5 !important; color:#5e2a86 !important; border:1px solid #d8c4e6; }
+.badge.bg-secondary{ background:#eef1f3 !important; color:#3f4d54 !important; border:1px solid #d6dde1; }
+.badge.bg-primary{ background:#e6f0f4 !important; color:#15506b !important; border:1px solid #c2d8e1; }
+
+/* --- уведомления --- */
+.alert{ border-radius:3px; border:1px solid var(--med-line); }
+.alert-info{ background:#f3f7f9 !important; color:#1f4a5e !important; border-left:4px solid var(--med-primary); }
+.alert-warning{ background:#fdf6e6 !important; color:#7a5600 !important; border-left:4px solid #c79100; }
+.alert-success{ background:#eef6f0 !important; color:#1e6b35 !important; border-left:4px solid #2e7d32; }
+.alert-danger{ background:#fdeaea !important; color:#a51c1c !important; border-left:4px solid #c0392b; }
+
+/* --- формы --- */
+.form-control,.form-select{ border-color:var(--med-line); border-radius:3px; }
+.form-control:focus,.form-select:focus{ border-color:var(--med-primary);
+  box-shadow:0 0 0 .15rem rgba(27,94,126,.18); }
+.text-muted{ color:var(--med-muted) !important; }

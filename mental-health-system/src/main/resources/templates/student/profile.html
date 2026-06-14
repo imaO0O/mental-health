@@ -7,13 +7,13 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background-color: #f8f9fa; }
-        .navbar { background-color: #4a90a4 !important; }
+        .navbar { background-color: #1b5e7e !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #4a90a4; border-color: #4a90a4; }
+        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
         .profile-avatar {
             width: 100px;
             height: 100px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1b5e7e;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -23,11 +23,12 @@
             margin: 0 auto 20px;
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/student/dashboard}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/student/results}">Мои результаты</a>
@@ -113,9 +114,9 @@
                 </div>
 
                 <div class="mt-4 d-flex gap-2 justify-content-center">
-                    <a th:href="@{/student/dashboard}" class="btn btn-primary">📝 К тестам</a>
-                    <a th:href="@{/student/results}" class="btn btn-outline-primary">📊 Мои результаты</a>
-                    <a th:href="@{/student/recommendations}" class="btn btn-outline-secondary">💡 Рекомендации</a>
+                    <a th:href="@{/student/dashboard}" class="btn btn-primary">К тестам</a>
+                    <a th:href="@{/student/results}" class="btn btn-outline-primary">Мои результаты</a>
+                    <a th:href="@{/student/recommendations}" class="btn btn-outline-secondary">Рекомендации</a>
                 </div>
             </div>
         </div>

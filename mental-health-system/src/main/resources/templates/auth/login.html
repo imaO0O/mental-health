@@ -7,8 +7,8 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         :root {
-            --brand-1: #667eea;
-            --brand-2: #764ba2;
+            --brand-1: #1b5e7e;
+            --brand-2: #1b5e7e;
         }
         html, body { height: 100%; }
         body {
@@ -22,7 +22,7 @@
             grid-template-columns: 1.1fr 1fr;
         }
         .auth-hero {
-            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            background: #1b5e7e;
             color: #fff;
             padding: 60px 56px;
             display: flex;
@@ -102,11 +102,11 @@
             border: 1px solid #e5e7eb;
         }
         .form-control:focus, .form-select:focus {
-            border-color: var(--brand-1);
+            border-color: #1b5e7e;
             box-shadow: 0 0 0 .2rem rgba(102, 126, 234, .15);
         }
         .btn-brand {
-            background: linear-gradient(135deg, var(--brand-1) 0%, var(--brand-2) 100%);
+            background: #1b5e7e;
             border: none;
             color: #fff;
             border-radius: 10px;
@@ -132,7 +132,7 @@
             padding: 1px 6px;
             border-radius: 5px;
         }
-        a { color: var(--brand-2); text-decoration: none; font-weight: 500; }
+        a { color: #1b5e7e; text-decoration: none; font-weight: 500; }
         a:hover { text-decoration: underline; }
         @media (max-width: 900px) {
             .auth-wrapper { grid-template-columns: 1fr; }
@@ -141,24 +141,25 @@
             .auth-card { padding: 32px 24px; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <div class="auth-wrapper">
         <aside class="auth-hero">
-            <div class="brand">🧠 Психотестирование</div>
+            <div class="brand">Мониторинг ментального здоровья</div>
             <div>
                 <h1>Забота о ментальном здоровье студентов</h1>
                 <p class="lead">Платформа для прохождения психологических тестов, отслеживания динамики и получения индивидуальных рекомендаций.</p>
                 <div class="feature">
-                    <div class="ico">📋</div>
+                    <div class="ico"></div>
                     <div><strong>Психологические тесты</strong><br><span style="opacity:.85">Профессиональные методики оценки состояния</span></div>
                 </div>
                 <div class="feature">
-                    <div class="ico">📈</div>
+                    <div class="ico"></div>
                     <div><strong>Динамика состояния</strong><br><span style="opacity:.85">Отслеживайте изменения во времени</span></div>
                 </div>
                 <div class="feature">
-                    <div class="ico">💡</div>
+                    <div class="ico"></div>
                     <div><strong>Персональные рекомендации</strong><br><span style="opacity:.85">Подсказки от психолога по уровню стресса</span></div>
                 </div>
             </div>
@@ -167,7 +168,7 @@
 
         <main class="auth-form-side">
             <div class="auth-card">
-                <h2>С возвращением 👋</h2>
+                <h2>С возвращением </h2>
                 <p class="subtitle">Войдите, чтобы продолжить работу с системой</p>
 
                 <div th:if="${param.registered}" class="alert alert-success py-2">

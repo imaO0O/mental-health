@@ -17,11 +17,12 @@
         .op-DELETE { color: #dc3545; font-weight: 600; }
         .details-cell { max-width: 360px; white-space: pre-wrap; word-break: break-word; color: #555; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/admin/dashboard}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/admin/dashboard}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/admin/dashboard}">Панель управления</a>
                 <a class="nav-link" th:href="@{/admin/users}">Пользователи</a>
@@ -36,7 +37,7 @@
 
     <div class="container py-4">
         <div class="mb-4">
-            <h1>📋 Журнал аудита</h1>
+            <h1>Журнал аудита</h1>
             <p class="text-muted mb-0">
                 Автоматический протокол изменений в базе данных (операции INSERT / UPDATE / DELETE
                 над справочниками и тестами). Всего записей:
@@ -70,7 +71,7 @@
                         <input type="date" name="to" class="form-control form-control-sm" th:value="${to}">
                     </div>
                     <div class="col-md-2 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">🔍 Фильтр</button>
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Фильтр</button>
                         <a th:href="@{/admin/audit}" class="btn btn-outline-secondary btn-sm">Сброс</a>
                     </div>
                 </form>

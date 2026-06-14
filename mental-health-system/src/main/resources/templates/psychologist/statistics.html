@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
-        .navbar { background-color: #5a4ba2 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .navbar { background-color: #1b5e7e !important; font-family: -apple-system, "Segoe UI", sans-serif; }
         .report {
             max-width: 1000px; margin: 24px auto; background: #fff;
             padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
@@ -40,11 +40,12 @@
             .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
@@ -57,7 +58,7 @@
     </nav>
 
     <div class="container-fluid no-print py-2 text-end" style="max-width: 1000px;">
-        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Печать отчёта (PDF)</button>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">Печать отчёта (PDF)</button>
     </div>
 
     <article class="report">
@@ -186,7 +187,7 @@
         <div th:if="${studentRows != null and not #lists.isEmpty(studentRows)}">
             <p style="text-indent: 28px;">
                 В таблице 5.1 приведён список обучающихся с результатами последнего
-                пройденного тестирования. Сигнальной отметкой <em>«⚠ Требует консультации»</em>
+                пройденного тестирования. Сигнальной отметкой <em>«Требует консультации»</em>
                 выделены обучающиеся, чей уровень стресса определён как «Высокий» или
                 «Критический». Всего таких обучающихся:
                 <strong th:text="${alarmCount}">0</strong>.
@@ -216,7 +217,7 @@
                         <td th:text="${r.hasResult ? r.score : '—'}">—</td>
                         <td th:text="${r.level != null ? r.level : '—'}">—</td>
                         <td>
-                            <span th:if="${r.alarm}" class="badge bg-danger">⚠ Требует консультации</span>
+                            <span th:if="${r.alarm}" class="badge bg-danger">Требует консультации</span>
                             <span th:if="${!r.alarm and r.hasResult}" class="badge bg-success">в норме</span>
                             <span th:if="${!r.hasResult}" class="text-muted small">не обследован</span>
                         </td>
@@ -285,7 +286,7 @@
                 type: 'bar',
                 data: {
                     labels: testLabels,
-                    datasets: [{ label: 'Средний балл', data: testAvgs, backgroundColor: '#5a4ba2' }]
+                    datasets: [{ label: 'Средний балл', data: testAvgs, backgroundColor: '#1b5e7e' }]
                 },
                 options: {
                     plugins: { legend: { display: false } },

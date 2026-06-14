@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Студенты</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
-        tr.overdue td { background-color: #fff4f4; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
@@ -31,7 +25,8 @@
     <div class="container py-4">
         <div class="row mb-3">
             <div class="col-12">
-                <h1>👨‍🎓 Студенты</h1>
+                <div class="med-letterhead">Отдел психологической поддержки · Картотека обучающихся</div>
+                <h1>Обучающиеся под наблюдением</h1>
                 <p class="text-muted" th:if="${!searching}">
                     Закреплённые за вами обучающиеся, отсортированные по давности приёма
                     (сначала те, кого нужно пригласить на осмотр).
@@ -43,7 +38,7 @@
         </div>
 
         <div class="alert alert-warning d-flex align-items-center" th:if="${!searching and overdueCount > 0}">
-            <span class="me-2" style="font-size:1.3rem;">⚠️</span>
+            <span class="me-2 fw-bold" style="color:#c79100;">!</span>
             <div>
                 Требуют приёма (более <strong th:text="${overdueDays}">30</strong> дней без консультации
                 либо консультаций не было):
@@ -67,7 +62,7 @@
                         </datalist>
                     </div>
                     <div class="col-md-3 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">🔍 Найти</button>
+                        <button type="submit" class="btn btn-primary flex-grow-1">Найти</button>
                         <a th:href="@{/psychologist/students}" class="btn btn-outline-secondary">Сброс</a>
                     </div>
                 </form>

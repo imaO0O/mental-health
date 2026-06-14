@@ -7,16 +7,17 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
+        .navbar { background-color: #1b5e7e !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
-        .stat-card { border-left: 4px solid #5a4ba2; }
+        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
+        .stat-card { border-left: 4px solid #1b5e7e; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/psychologist/tests}">Тесты</a>
@@ -67,7 +68,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">📋 Тесты</h5>
+                        <h5 class="mb-0">Тесты</h5>
                         <a th:href="@{/psychologist/test/create}" class="btn btn-primary btn-sm">Создать тест</a>
                     </div>
                     <div class="card-body">

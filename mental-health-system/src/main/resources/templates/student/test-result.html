@@ -7,7 +7,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
-        .navbar { background-color: #4a90a4 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .navbar { background-color: #1b5e7e !important; font-family: -apple-system, "Segoe UI", sans-serif; }
         .report {
             max-width: 1000px; margin: 24px auto; background: #fff;
             padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
@@ -35,11 +35,12 @@
             .lvl-badge { border: 1px solid #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/student/dashboard}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/student/results}">Мои результаты</a>
@@ -52,7 +53,7 @@
 
     <div class="container-fluid no-print py-2 d-flex justify-content-between" style="max-width: 1000px;">
         <a th:href="@{/student/results}" class="btn btn-outline-secondary btn-sm">← К результатам</a>
-        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Распечатать (PDF)</button>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">Распечатать (PDF)</button>
     </div>
 
     <article class="report">

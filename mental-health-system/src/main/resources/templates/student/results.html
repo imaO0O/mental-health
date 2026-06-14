@@ -7,7 +7,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background: #f8f9fa; font-family: "Times New Roman", Times, serif; color: #111; }
-        .navbar { background-color: #4a90a4 !important; font-family: -apple-system, "Segoe UI", sans-serif; }
+        .navbar { background-color: #1b5e7e !important; font-family: -apple-system, "Segoe UI", sans-serif; }
         .report {
             max-width: 1000px; margin: 24px auto; background: #fff;
             padding: 56px 64px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
@@ -31,11 +31,12 @@
             .report { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
         }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/student/dashboard}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/student/dashboard}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/student/dashboard}">Главная</a>
                 <a class="nav-link active" th:href="@{/student/results}">Мои результаты</a>
@@ -73,14 +74,14 @@
                         <input type="date" name="to" class="form-control form-control-sm" th:value="${to}">
                     </div>
                     <div class="col-md-3 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">🔍 Фильтр</button>
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Фильтр</button>
                         <a th:href="@{/student/results}" class="btn btn-outline-secondary btn-sm">Сброс</a>
                     </div>
                 </form>
             </div>
         </div>
         <div class="text-end mb-2">
-            <button class="btn btn-outline-primary btn-sm" onclick="window.print()">🖨 Распечатать (PDF)</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="window.print()">Распечатать (PDF)</button>
         </div>
     </div>
 

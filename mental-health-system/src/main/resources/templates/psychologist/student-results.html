@@ -7,15 +7,16 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <style>
         body { background-color: #f8f9fa; }
-        .navbar { background-color: #5a4ba2 !important; }
+        .navbar { background-color: #1b5e7e !important; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #5a4ba2; border-color: #5a4ba2; }
+        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" th:href="@{/home}">🧠 Психотестирование</a>
+            <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
                 <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
@@ -29,9 +30,9 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <a th:href="@{/psychologist/students}" class="btn btn-outline-secondary">← Назад к списку</a>
-                    <a th:href="@{/psychologist/student/{id}/dynamics(id=${student.id})}" class="btn btn-outline-primary">📈 Динамика</a>
+                    <a th:href="@{/psychologist/student/{id}/dynamics(id=${student.id})}" class="btn btn-outline-primary">Динамика</a>
                 </div>
-                <h1>📊 Результаты студента</h1>
+                <h1>Результаты студента</h1>
                 <h4 class="text-muted">
                     <span th:text="${student.fullName} ?: ${student.username}">Студент</span>
                     <span th:if="${student.groupName != null}" class="badge bg-secondary ms-2"
@@ -79,7 +80,7 @@
         <div class="row mt-3">
           <div class="col-md-6 mb-3">
             <div class="card h-100">
-              <div class="card-header fw-semibold">📝 Заметки по тестированию</div>
+              <div class="card-header fw-semibold">Заметки по тестированию</div>
               <div class="card-body">
                 <div th:if="${notes == null or #lists.isEmpty(notes)}" class="text-muted small">Заметок пока нет.</div>
                 <ul class="list-group list-group-flush" th:if="${notes != null and not #lists.isEmpty(notes)}">
@@ -97,7 +98,7 @@
           </div>
           <div class="col-md-6 mb-3">
             <div class="card h-100">
-              <div class="card-header fw-semibold">💬 Консультации</div>
+              <div class="card-header fw-semibold">Консультации</div>
               <div class="card-body">
                 <div th:if="${consultations == null or #lists.isEmpty(consultations)}" class="text-muted small">Консультаций пока не было.</div>
                 <ul class="list-group list-group-flush mb-3" th:if="${consultations != null and not #lists.isEmpty(consultations)}">
