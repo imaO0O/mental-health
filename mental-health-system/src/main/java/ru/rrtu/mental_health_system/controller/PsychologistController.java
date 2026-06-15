@@ -387,6 +387,26 @@ public class PsychologistController {
         return "redirect:/psychologist/student/" + recordBookNumber + "/results";
     }
 
+    /** Закрепление психолога-куратора за обучающимся (аналог sp_assign_curator_psychologist). */
+    @PostMapping("/student/{rbn}/assign-curator")
+    public String assignCurator(@PathVariable("rbn") Long recordBookNumber,
+                                Authentication authentication) {
+        User user = userService.findByLogin(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/login";
+        Psychologist psy = currentPsychologist(user);
+        Student student = studentRepository.findById(recordBookNumber).orElse(null);
+        if (psy != null && student != null) {
+            student.setCurator(psy);
+            studentRepository.save(student);
+            Consultation c = new Consultation();
+            c.setPsychologist(psy);
+            c.setStudent(student);
+            c.setConsultationText("Назначен куратором. Начато наблюдение за обучающимся.");
+            consultationRepository.save(c);
+        }
+        return "redirect:/psychologist/student/" + recordBookNumber + "/results";
+    }
+
     @GetMapping("/statistics")
     public String statistics(Model model, Authentication authentication) {
         User user = userService.findByLogin(authentication.getName()).orElse(null);

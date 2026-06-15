@@ -3,14 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результаты студента</title>
+    <title>Карточка обучающегося</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
-    <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #1b5e7e !important; }
-        .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #1b5e7e; border-color: #1b5e7e; }
-    </style>
     <link rel="stylesheet" th:href="@{/css/official.css}">
 </head>
 <body>
@@ -19,106 +13,140 @@
             <a class="navbar-brand" th:href="@{/home}">Мониторинг ментального здоровья</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/psychologist/dashboard}">Главная</a>
-                <a class="nav-link" th:href="@{/psychologist/students}">Студенты</a>
+                <a class="nav-link active" th:href="@{/psychologist/students}">Студенты</a>
                 <a class="nav-link" th:href="@{/logout}">Выйти</a>
             </div>
         </div>
     </nav>
 
     <div class="container py-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <a th:href="@{/psychologist/students}" class="btn btn-outline-secondary">← Назад к списку</a>
-                    <a th:href="@{/psychologist/student/{id}/dynamics(id=${student.id})}" class="btn btn-outline-primary">Динамика</a>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <a th:href="@{/psychologist/students}" class="btn btn-outline-secondary btn-sm">← К списку обучающихся</a>
+            <a th:href="@{/psychologist/student/{id}/dynamics(id=${student.id})}" class="btn btn-outline-primary btn-sm">Динамика результатов</a>
+        </div>
+        <div class="med-letterhead">Отдел психологической поддержки · Карта индивидуального наблюдения</div>
+        <h1>Карточка обучающегося</h1>
+
+        <!-- Сведения об обучающемся -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <table class="table table-bordered mb-0">
+                    <tbody>
+                        <tr><th style="width:25%;">Фамилия, имя, отчество</th>
+                            <td th:text="${student.fullName} ?: ${student.username}">—</td>
+                            <th style="width:20%;">Учебная группа</th>
+                            <td th:text="${student.groupName}">—</td></tr>
+                        <tr><th>Номер зачётной книжки</th>
+                            <td th:text="${student.recordBookNumber}">—</td>
+                            <th>Психологический тип</th>
+                            <td th:text="${student.psychType} ?: '—'">—</td></tr>
+                        <tr><th>Группа риска</th>
+                            <td th:text="${student.riskGroup} ?: '—'">—</td>
+                            <th>Психолог-куратор</th>
+                            <td>
+                                <span th:if="${student.curator != null}" th:text="${student.curator.fullName}">—</span>
+                                <span th:if="${student.curator == null}" class="text-muted">не назначен</span>
+                                <form class="d-inline ms-2" method="post"
+                                      th:action="@{/psychologist/student/{id}/assign-curator(id=${student.id})}">
+                                    <button class="btn btn-outline-primary btn-sm" type="submit">Назначить себя куратором</button>
+                                </form>
+                            </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 1. Протоколы тестирования -->
+        <h3>Протоколы тестирования</h3>
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="table-responsive" th:if="${results != null and not #lists.isEmpty(results)}">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead>
+                            <tr><th style="width:5%;">№</th><th>Методика</th><th>Дата и время</th>
+                                <th style="width:12%;">Балл</th><th style="width:18%;">Градация (заключение)</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="result, it : ${results}">
+                                <td th:text="${it.count}">1</td>
+                                <td th:text="${result.test.name}">Методика</td>
+                                <td th:text="${#temporals.format(result.takenAt, 'dd.MM.yyyy HH:mm')}">—</td>
+                                <td th:text="${result.totalScore}">0</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${result.grade != null ? (result.grade.name == 'Низкий' ? 'bg-success' : (result.grade.name == 'Средний' ? 'bg-warning text-dark' : (result.grade.name == 'Высокий' ? 'bg-danger' : 'bg-dark'))) : 'bg-secondary'}"
+                                          th:text="${result.grade != null ? result.grade.name : 'не определена'}">—</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <h1>Результаты студента</h1>
-                <h4 class="text-muted">
-                    <span th:text="${student.fullName} ?: ${student.username}">Студент</span>
-                    <span th:if="${student.groupName != null}" class="badge bg-secondary ms-2"
-                          th:text="${student.groupName}">ИВТ-41</span>
-                </h4>
+                <div class="alert alert-info mb-0" th:if="${results == null or #lists.isEmpty(results)}">
+                    Обучающийся ещё не проходил психодиагностических обследований.
+                </div>
             </div>
         </div>
 
         <div class="row">
-            <div class="col-12">
-                <div class="card">
+            <!-- 2. Заметки по тестированию -->
+            <div class="col-lg-6 mb-3">
+                <h3>Заметки по тестированию</h3>
+                <div class="card h-100">
                     <div class="card-body">
-                        <div class="table-responsive" th:if="${results}">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>№</th>
-                                        <th>Тест</th>
-                                        <th>Баллы</th>
-                                        <th>Дата</th>
-                                        <th>Результат</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="result, iterStat : ${results}">
-                                        <td th:text="${iterStat.count}">1</td>
-                                        <td th:text="${result.test.name}">Тест</td>
-                                        <td>
-                                            <span class="badge bg-primary" th:text="${result.totalScore}">0</span>
-                                        </td>
-                                        <td th:text="${#temporals.format(result.dateTaken, 'dd.MM.yyyy HH:mm')}">01.01.2026</td>
-                                        <td th:text="${result.stressLevel?.name} ?: 'Нет оценки'">Результат</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div th:if="${notes == null or #lists.isEmpty(notes)}" class="text-muted small mb-2">
+                            Заметок по протоколам пока нет.
                         </div>
-                        <div class="alert alert-info" th:if="${#lists.isEmpty(results)}">
-                            Студент ещё не прошёл ни одного теста.
-                        </div>
+                        <ul class="list-group list-group-flush mb-3" th:if="${notes != null and not #lists.isEmpty(notes)}">
+                            <li class="list-group-item px-0" th:each="n : ${notes}">
+                                <div class="small text-muted">
+                                    <span th:text="${#temporals.format(n.noteDate,'dd.MM.yyyy')}">01.01.2026</span>
+                                    · протокол №<span th:text="${n.protocol != null ? n.protocol.protocolNumber : '—'}">0</span>
+                                    · <span th:text="${n.psychologist != null ? n.psychologist.fullName : ''}"></span>
+                                </div>
+                                <div th:text="${n.noteText}">текст заметки</div>
+                            </li>
+                        </ul>
+                        <form method="post" th:action="@{/psychologist/student/{id}/note(id=${student.id})}"
+                              th:if="${results != null and not #lists.isEmpty(results)}">
+                            <label class="form-label small text-muted mb-1">Протокол</label>
+                            <select name="protocolNumber" class="form-select form-select-sm mb-2">
+                                <option th:each="r : ${results}" th:value="${r.protocolNumber}"
+                                        th:text="'№' + ${r.protocolNumber} + ' — ' + ${r.test.name}"></option>
+                            </select>
+                            <textarea name="noteText" rows="2" class="form-control form-control-sm mb-2"
+                                      placeholder="Наблюдение по результату тестирования..."></textarea>
+                            <button class="btn btn-primary btn-sm" type="submit">Добавить заметку</button>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="row mt-3">
-          <div class="col-md-6 mb-3">
-            <div class="card h-100">
-              <div class="card-header fw-semibold">Заметки по тестированию</div>
-              <div class="card-body">
-                <div th:if="${notes == null or #lists.isEmpty(notes)}" class="text-muted small">Заметок пока нет.</div>
-                <ul class="list-group list-group-flush" th:if="${notes != null and not #lists.isEmpty(notes)}">
-                  <li class="list-group-item px-0" th:each="n : ${notes}">
-                    <div class="small text-muted">
-                      <span th:text="${#temporals.format(n.noteDate,'dd.MM.yyyy')}">01.01.2026</span>
-                      · протокол №<span th:text="${n.protocol != null ? n.protocol.protocolNumber : '—'}">0</span>
-                      · <span th:text="${n.psychologist != null ? n.psychologist.fullName : ''}"></span>
+            <!-- 3. Консультации -->
+            <div class="col-lg-6 mb-3">
+                <h3>Консультации</h3>
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div th:if="${consultations == null or #lists.isEmpty(consultations)}" class="text-muted small mb-2">
+                            Личных консультаций пока не было.
+                        </div>
+                        <ul class="list-group list-group-flush mb-3" th:if="${consultations != null and not #lists.isEmpty(consultations)}">
+                            <li class="list-group-item px-0" th:each="c : ${consultations}">
+                                <div class="small text-muted">
+                                    <span th:text="${#temporals.format(c.consultationDate,'dd.MM.yyyy')}">01.01.2026</span>
+                                    · <span th:text="${c.psychologist != null ? c.psychologist.fullName : ''}"></span>
+                                </div>
+                                <div th:text="${c.consultationText}">содержание беседы</div>
+                            </li>
+                        </ul>
+                        <form method="post" th:action="@{/psychologist/student/{id}/consultation(id=${student.id})}">
+                            <label class="form-label small text-muted mb-1">Содержание личной беседы</label>
+                            <textarea name="consultationText" rows="2" class="form-control form-control-sm mb-2"
+                                      placeholder="Краткое содержание консультации..."></textarea>
+                            <button class="btn btn-primary btn-sm" type="submit">Записать консультацию</button>
+                        </form>
                     </div>
-                    <div th:text="${n.noteText}">текст заметки</div>
-                  </li>
-                </ul>
-              </div>
+                </div>
             </div>
-          </div>
-          <div class="col-md-6 mb-3">
-            <div class="card h-100">
-              <div class="card-header fw-semibold">Консультации</div>
-              <div class="card-body">
-                <div th:if="${consultations == null or #lists.isEmpty(consultations)}" class="text-muted small">Консультаций пока не было.</div>
-                <ul class="list-group list-group-flush mb-3" th:if="${consultations != null and not #lists.isEmpty(consultations)}">
-                  <li class="list-group-item px-0" th:each="c : ${consultations}">
-                    <div class="small text-muted">
-                      <span th:text="${#temporals.format(c.consultationDate,'dd.MM.yyyy')}">01.01.2026</span>
-                      · <span th:text="${c.psychologist != null ? c.psychologist.fullName : ''}"></span>
-                    </div>
-                    <div th:text="${c.consultationText}">текст беседы</div>
-                  </li>
-                </ul>
-                <form method="post" th:action="@{/psychologist/student/{id}/consultation(id=${student.id})}">
-                  <div class="input-group input-group-sm">
-                    <input type="text" name="consultationText" class="form-control" placeholder="Записать консультацию...">
-                    <button class="btn btn-primary" type="submit">Добавить</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
         </div>
     </div>
 
